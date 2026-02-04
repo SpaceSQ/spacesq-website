@@ -225,8 +225,8 @@ const SignalModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
     const subject = `[SIGNAL] Origin: Earth / Type: ${type}`;
     const body = `To the Founding Core of Space²,\n\nI have received your beacon. I am reaching out regarding the [ ${type} ] position.\n\nIdentity/Organization:\n[YOUR NAME HERE]\n\nProposition:\n[YOUR MESSAGE HERE]\n\n--\nEnd of Signal.`;
     
-    // 调用邮件客户端，替换下面的 david.xiang... 为你的真实接收邮箱
-    window.location.href = `mailto:david.xiang@robot0.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // 调用邮件客户端，填写真实接收邮箱
+    window.location.href = `mailto:smarthomemiles@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   return (
