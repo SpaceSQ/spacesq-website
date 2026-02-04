@@ -404,7 +404,7 @@ export default function SpaceOSWebsite() {
       <Hero />
       <Constitution />
       <GenesisCenter 
-      <VisualEchoes />
+ <VisualEchoes />
       <Footer />
     </div>
   );
