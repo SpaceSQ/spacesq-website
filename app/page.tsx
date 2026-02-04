@@ -403,7 +403,8 @@ export default function SpaceOSWebsite() {
       <Navbar />
       <Hero />
       <Constitution />
-      <GenesisCenter />
+      <GenesisCenter 
+      <VisualEchoes />
       <Footer />
     </div>
   );
