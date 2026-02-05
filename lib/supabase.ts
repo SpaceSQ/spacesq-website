@@ -1,19 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 1. 尝试读取环境变量
-const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const envKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// 获取环境变量
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// 2. 🛡️ 终极防弹逻辑：
-// 无论环境变量读没读到，必须保证传给 createClient 的是一个合法的 URL 字符串。
-// 只要不是 undefined 或空字符串，构建就能通过。
-const url = (envUrl && envUrl.length > 0) ? envUrl : 'https://placeholder.supabase.co';
-const key = (envKey && envKey.length > 0) ? envKey : 'placeholder-key';
+// --- 🛡️ 防弹逻辑 ---
+// 如果没有读到 URL (比如在构建期间)，我们就用一个假的符合格式的 URL 顶替
+// 这样 createClient 就不会报错崩溃了
+const urlToUse = supabaseUrl || 'https://placeholder.supabase.co';
+const keyToUse = supabaseKey || 'placeholder-key';
 
-// 3. 只有在开发环境才打印日志 (可选)
-if (!envUrl) {
-  console.warn('⚠️ Supabase URL not found in environment, using placeholder.');
-}
-
-// 4. 导出客户端
-export const supabase = createClient(url, key);
+// 导出连接客户端
+export const supabase = createClient(urlToUse, keyToUse);
