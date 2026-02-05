@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Terminal, Copy, Check, Download, ChevronRight, Server, Shield, Cpu, Code, ArrowLeft } from 'lucide-react';
+import { Terminal, Copy, Check, Download, ChevronRight, Server, Shield, Cpu, Code, ArrowLeft, Activity, Lock } from 'lucide-react';
 
 // --- 组件：CLI 模拟器 ---
 const CLISimulator = () => {
@@ -198,7 +198,7 @@ export default function DevelopersPage() {
         </div>
 
         {/* 架构文档区 */}
-        <div className="border-t border-zinc-900 pt-20">
+        <div className="border-t border-zinc-900 pt-20 pb-20">
           <h2 className="text-2xl font-bold font-mono mb-12 text-center">CORE ARCHITECTURE</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -242,6 +242,68 @@ export default function DevelopersPage() {
               <a href="#" className="text-xs text-red-500 font-mono hover:underline flex items-center">
                 SECURITY WHITE PAPER <ChevronRight className="w-3 h-3 ml-1" />
               </a>
+            </div>
+          </div>
+        </div>
+
+        {/* === S2-AGIS 免疫系统监控面板 === */}
+        <div className="mt-8 border-t border-red-900/30 pt-16">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold font-mono text-red-500 flex items-center gap-2">
+                <Shield className="w-6 h-6 animate-pulse" />
+                S2-AGIS LIVE MONITOR
+              </h2>
+              <p className="text-xs text-gray-500 font-mono mt-1">
+                Artificial General Immune System // Global Defense Layer
+              </p>
+            </div>
+            <div className="flex gap-4">
+               <div className="text-right">
+                 <div className="text-[10px] text-gray-500 font-mono">THREAT LEVEL</div>
+                 <div className="text-xl font-bold text-green-500 font-mono">LOW / STABLE</div>
+               </div>
+               <div className="text-right">
+                 <div className="text-[10px] text-gray-500 font-mono">BLACKLISTED IDs</div>
+                 <div className="text-xl font-bold text-red-500 font-mono">1,024</div>
+               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/30 p-4 rounded border border-red-900/20">
+            {/* 左侧：实时拦截日志 */}
+            <div className="font-mono text-xs h-40 overflow-hidden relative">
+               <div className="absolute top-0 left-0 bg-red-500/10 text-red-500 px-2 py-0.5 rounded text-[10px] mb-2 inline-block">
+                 INTERCEPTION LOG
+               </div>
+               <div className="mt-8 space-y-1 text-gray-400 opacity-80">
+                 <p className="text-red-400">>> [BLOCKED] Agent_X99 tried accessing PHY-Mars-01 without signature.</p>
+                 <p>>> [INFO] Node VIR-Meta-03 reported suspicious heartbeat.</p>
+                 <p>>> [SYNC] Global Blacklist updated (Hash: #99a2b).</p>
+                 <p className="text-red-400">>> [BLOCKED] Unauthorized API call from IP 192.168.x.x</p>
+                 <p>>> [SCAN] Routine integrity check passed for 450 nodes.</p>
+               </div>
+            </div>
+
+            {/* 右侧：防御协议状态 */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-black border border-zinc-800 p-3 rounded flex flex-col justify-center items-center text-center">
+                 <div className="text-[10px] text-gray-500 mb-1">PROTOCOL IV</div>
+                 <div className="text-white font-bold text-sm">DENIAL OF SERVICE</div>
+                 <div className="text-green-500 text-[10px] mt-1">ACTIVE</div>
+              </div>
+              <div className="bg-black border border-zinc-800 p-3 rounded flex flex-col justify-center items-center text-center">
+                 <div className="text-[10px] text-gray-500 mb-1">PHYSICAL FUSE</div>
+                 <div className="text-white font-bold text-sm">AIR-GAP TRIGGER</div>
+                 <div className="text-green-500 text-[10px] mt-1">READY</div>
+              </div>
+              <div className="bg-black border border-zinc-800 p-3 rounded flex flex-col justify-center items-center text-center col-span-2">
+                 <div className="text-[10px] text-gray-500 mb-1">IDENTITY ORACLE</div>
+                 <div className="text-white font-bold text-sm">GENESIS HUB UPLINK</div>
+                 <div className="w-full h-1 bg-zinc-800 mt-2 rounded overflow-hidden">
+                   <div className="h-full bg-blue-600 w-[98%] animate-pulse"></div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
