@@ -1,19 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// 1. 获取原始内容
-const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// ⚠️ 暴力测试模式：直接把真实的 URL 和 Key 填在这里
+// 注意：不要把这个文件长期留在 GitHub 上，测试完我们再改回环境变量模式
+const hardcodedUrl = 'https://ajmcstwhrblnbcavlqlq.supabase.co'; 
+const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqbWNzdHdocmJsbmJjYXZscWxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNzU2MTUsImV4cCI6MjA4NTg1MTYxNX0.KpC9KtTWJLb7_QzwNr6aWVQiwe1rgTpz1CgP4pp_9bk';
 
-// 2. 🧹 强力清洗逻辑 (洗掉引号、空格)
-// 这一步能解决 99% 的配置错误
-const cleanUrl = rawUrl.replace(/["']/g, '').trim();
-const cleanKey = rawKey.replace(/["']/g, '').trim();
-
-// 3. ✅ 合法性检查
-// 如果清洗后的 URL 不是以 http 开头，说明还是坏的，就用假的占位符顶替
-// 这样构建器就不会崩溃了
-const urlToUse = cleanUrl.startsWith('http') ? cleanUrl : 'https://placeholder.supabase.co';
-const keyToUse = cleanKey.length > 0 ? cleanKey : 'placeholder-key';
-
-// 4. 创建客户端
-export const supabase = createClient(urlToUse, keyToUse);
+export const supabase = createClient(hardcodedUrl, hardcodedKey);
