@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 1. 获取原始内容
 const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const rawKey = process.env.EXT_PUBLIC_SUPABASE_ANON_KEY;
 
 // 2. 🧹 强力清洗 (洗掉可能存在的引号和空格)
 const cleanUrl = rawUrl.replace(/["']/g, '').trim();
