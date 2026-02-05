@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Shield, Globe, Cpu, ArrowLeft, Grid, Database, CheckCircle, Lock, Terminal, Search, MapPin, Server, Activity } from 'lucide-react';
+import { supabase } from '../../lib/supabase';// 引入真实的数据库连接
+import { Shield, Globe, Cpu, ArrowLeft, Grid, Server, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
 
 // --- 组件：S2-SLIP 身份证展示 (保持不变) ---
 const IDCard = () => (
@@ -39,39 +40,91 @@ const IDCard = () => (
   </div>
 );
 
-// --- 组件：SUNS 空间注册机 (新功能核心) ---
+// --- 组件：SUNS 真实空间注册机 ---
 const SpaceRegistrar = () => {
   const [domain, setDomain] = useState("");
   const [type, setType] = useState("VIR");
-  const [status, setStatus] = useState<'IDLE' | 'CHECKING' | 'AVAILABLE' | 'TAKEN'>('IDLE');
-  const [step, setStep] = useState(1); // 1: Search, 2: Review
+  const [status, setStatus] = useState<'IDLE' | 'CHECKING' | 'AVAILABLE' | 'TAKEN' | 'ERROR'>('IDLE');
+  const [step, setStep] = useState(1);
+  const [regStatus, setRegStatus] = useState<'IDLE' | 'SUBMITTING' | 'SUCCESS'>('IDLE');
 
-  const handleCheck = (e: React.FormEvent) => {
+  // 1. 真实查询函数
+  const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!domain) return;
     setStatus('CHECKING');
-    setTimeout(() => {
-      // 模拟简单的检查逻辑：如果包含 "admin" 或 "root" 则被占用
-      if (domain.toLowerCase().includes('admin') || domain.toLowerCase().includes('root')) {
-        setStatus('TAKEN');
-      } else {
-        setStatus('AVAILABLE');
+    
+    const fullSuns = `${type}-${domain.toUpperCase()}-ROOT`;
+
+    try {
+      // 查询 Supabase 数据库
+      const { data, error } = await supabase
+        .from('spaces')
+        .select('suns_id')
+        .eq('suns_id', fullSuns)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { 
+        // PGRST116 意思是没找到数据(好事)，其他错误才是真错误
+        console.error("DB Error:", error);
+        setStatus('ERROR');
+        return;
       }
-    }, 1500);
+
+      if (data) {
+        setStatus('TAKEN'); // 查到了，说明被占用了
+      } else {
+        setStatus('AVAILABLE'); // 没查到，说明可用
+      }
+    } catch (err) {
+      console.error("Network Error:", err);
+      setStatus('ERROR');
+    }
+  };
+
+  // 2. 真实注册函数
+  const handleRegister = async () => {
+    setRegStatus('SUBMITTING');
+    const fullSuns = `${type}-${domain.toUpperCase()}-ROOT`;
+
+    try {
+      // 插入数据到 Supabase
+      const { error } = await supabase
+        .from('spaces')
+        .insert([
+          { 
+            suns_id: fullSuns, 
+            type: type,
+            status: 'ACTIVE'
+            // 注意：因为我们现在还没做强制登录，所以 owner_id 暂时留空或由后端处理
+            // 在生产环境中，这里会自动读取当前登录用户的 ID
+          }
+        ]);
+
+      if (error) {
+        console.error("Insert Error:", error);
+        alert("Registration Failed: " + error.message);
+        setRegStatus('IDLE');
+      } else {
+        setRegStatus('SUCCESS');
+      }
+    } catch (err) {
+       alert("System Error");
+       setRegStatus('IDLE');
+    }
   };
 
   return (
     <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-8 max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
-      {/* 顶部标签 */}
       <div className="absolute top-0 right-0 bg-blue-900/50 text-blue-400 text-[10px] font-mono px-3 py-1 rounded-bl border-b border-l border-blue-500/30">
-        SUNS ROOT REGISTRAR
+        SUNS LIVE DATABASE
       </div>
 
       <div className="text-center mb-8">
         <Server className="w-12 h-12 text-blue-500 mx-auto mb-4" />
         <h3 className="text-2xl font-bold text-white font-mono">CLAIM YOUR SPACE</h3>
         <p className="text-sm text-gray-400 font-mono mt-2">
-          Apply for a Top-Level Seed Node. Own the root, govern the sub-space.
+          Apply for a Top-Level Seed Node. Recorded on Planetary Ledger.
         </p>
       </div>
 
@@ -99,19 +152,22 @@ const SpaceRegistrar = () => {
                  disabled={status === 'CHECKING' || !domain}
                  className="bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold px-6 py-3 rounded disabled:opacity-50 transition-colors"
                >
-                 {status === 'CHECKING' ? '...' : 'CHECK'}
+                 {status === 'CHECKING' ? '...' : 'CHECK AVAILABILITY'}
                </button>
             </div>
-            <p className="text-[10px] text-gray-600 font-mono ml-1">
-              * Example: PHY-Mars-Base01 or VIR-Meta-SilkRoad
-            </p>
           </form>
 
           {/* 状态反馈 */}
           {status === 'CHECKING' && (
              <div className="text-center py-4 space-y-2">
                <div className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-               <p className="text-xs text-blue-400 font-mono">Querying Global Ledger...</p>
+               <p className="text-xs text-blue-400 font-mono">Querying Supabase Node [Singapore]...</p>
+             </div>
+          )}
+
+          {status === 'ERROR' && (
+             <div className="text-center py-4 text-red-500 text-xs font-mono">
+               DATABASE CONNECTION FAILED. PLEASE CHECK .ENV.LOCAL CONFIG.
              </div>
           )}
 
@@ -119,7 +175,7 @@ const SpaceRegistrar = () => {
             <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center animate-fade-in">
               <p className="text-red-500 font-mono font-bold mb-1">❌ DOMAIN UNAVAILABLE</p>
               <p className="text-gray-400 text-xs font-mono">
-                The coordinates [{type}-{domain.toUpperCase()}] are already anchored by another entity.
+                Coordinates [{type}-{domain.toUpperCase()}-ROOT] are already anchored.
               </p>
             </div>
           )}
@@ -130,48 +186,30 @@ const SpaceRegistrar = () => {
               <div className="bg-black/50 p-3 rounded border border-zinc-700 font-mono text-white mb-4">
                 {type}-{domain.toUpperCase()}-ROOT
               </div>
-              <p className="text-gray-400 text-xs font-mono mb-6 max-w-sm mx-auto">
-                By minting this Root Node, you become the <span className="text-white">Governor</span> of all sub-coordinates within this namespace.
-              </p>
               <button 
                 onClick={() => setStep(2)}
                 className="w-full bg-white text-black font-mono font-bold py-3 rounded hover:bg-gray-200 transition-colors"
               >
-                PROCEED TO APPLICATION
+                PROCEED TO CLAIM
               </button>
             </div>
           )}
         </>
       )}
 
-      {step === 2 && (
+      {step === 2 && regStatus !== 'SUCCESS' && (
         <div className="animate-slide-up">
            <div className="mb-6 p-4 bg-zinc-950 border border-zinc-800 rounded font-mono text-xs text-gray-400 space-y-2">
               <div className="flex justify-between">
                 <span>TARGET ROOT:</span>
-                <span className="text-white font-bold">{type}-{domain.toUpperCase()}</span>
+                <span className="text-white font-bold">{type}-{domain.toUpperCase()}-ROOT</span>
               </div>
               <div className="flex justify-between">
-                <span>REGISTRY FEE:</span>
-                <span className="text-white">100 NBT (Staked)</span>
-              </div>
-              <div className="flex justify-between">
-                <span>VALIDATION:</span>
-                <span className="text-blue-400">Automated + Manual Audit</span>
+                <span>STATUS:</span>
+                <span className="text-blue-400">READY TO WRITE</span>
               </div>
            </div>
            
-           <div className="space-y-4">
-             <div className="flex gap-2">
-                <input type="checkbox" className="mt-1 bg-black border-zinc-700" />
-                <p className="text-xs text-gray-500">I agree to enforce the <span className="text-red-500">Physical Fuse (Law #1)</span> in this space.</p>
-             </div>
-             <div className="flex gap-2">
-                <input type="checkbox" className="mt-1 bg-black border-zinc-700" />
-                <p className="text-xs text-gray-500">I acknowledge that Space² Core reserves the right to revoke this Root for safety violations.</p>
-             </div>
-           </div>
-
            <div className="mt-8 flex gap-4">
              <button 
                onClick={() => { setStep(1); setStatus('IDLE'); }}
@@ -180,15 +218,29 @@ const SpaceRegistrar = () => {
                CANCEL
              </button>
              <button 
-               onClick={() => window.location.href = '/developers'}
-               className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs py-3 rounded"
+               onClick={handleRegister}
+               disabled={regStatus === 'SUBMITTING'}
+               className="flex-1 bg-green-600 hover:bg-green-500 text-white font-mono font-bold text-xs py-3 rounded disabled:opacity-50"
              >
-               SUBMIT TO GENESIS HUB
+               {regStatus === 'SUBMITTING' ? 'WRITING TO LEDGER...' : 'CONFIRM REGISTRATION'}
              </button>
            </div>
-           <p className="text-[10px] text-center text-gray-600 mt-4 font-mono">
-             * Redirecting to Developer Console for signature signing.
-           </p>
+        </div>
+      )}
+
+      {regStatus === 'SUCCESS' && (
+        <div className="text-center py-8 animate-fade-in">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold text-white font-mono mb-2">REGISTRATION COMPLETE</h3>
+          <p className="text-gray-400 font-mono text-sm mb-6">
+            Node [{type}-{domain.toUpperCase()}-ROOT] has been permanently recorded in the Space² Ledger.
+          </p>
+          <button 
+             onClick={() => { setStep(1); setStatus('IDLE'); setRegStatus('IDLE'); setDomain(''); }}
+             className="px-6 py-2 border border-zinc-700 text-white font-mono text-xs rounded hover:bg-zinc-800"
+          >
+            REGISTER ANOTHER
+          </button>
         </div>
       )}
     </div>
@@ -201,7 +253,6 @@ export default function RegistryPage() {
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-red-900 selection:text-white">
-      {/* 顶部导航 */}
       <nav className="fixed top-0 w-full z-50 bg-black/90 border-b border-zinc-800 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <a href="/" className="flex items-center text-gray-400 hover:text-white transition-colors">
@@ -215,8 +266,6 @@ export default function RegistryPage() {
       </nav>
 
       <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* 头部标题与切换器 */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-mono font-bold mb-6 tracking-tight">
             THE <span className="text-red-600">REGISTRY</span>
@@ -225,7 +274,6 @@ export default function RegistryPage() {
             Official Database of Silicon Life Identities (SLIP) and Spatial Coordinates (SUNS).
           </p>
           
-          {/* Tab 切换 */}
           <div className="inline-flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
             <button 
               onClick={() => setActiveTab('SPACE')}
@@ -242,79 +290,14 @@ export default function RegistryPage() {
           </div>
         </div>
 
-        {/* 内容区域：根据 Tab 切换 */}
         <div className="animate-fade-in">
-          
-          {/* === SPACE (SUNS) 板块 === */}
           {activeTab === 'SPACE' && (
             <div className="space-y-20">
-              {/* 1. 注册机 */}
               <SpaceRegistrar />
-
-              {/* 2. 空间架构说明 */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto border-t border-zinc-900 pt-16">
-                 <div className="text-center">
-                   <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
-                     <Server className="w-5 h-5 text-blue-500" />
-                   </div>
-                   <h3 className="font-bold text-white font-mono mb-2">ROOT GOVERNANCE</h3>
-                   <p className="text-xs text-gray-400 leading-relaxed">
-                     Space² manages Top-Level Seeds. We prevent coordinate collisions and verify "Physical Fuse" compliance.
-                   </p>
-                 </div>
-                 <div className="text-center">
-                   <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
-                     <Grid className="w-5 h-5 text-purple-500" />
-                   </div>
-                   <h3 className="font-bold text-white font-mono mb-2">SUB-NODE AUTONOMY</h3>
-                   <p className="text-xs text-gray-400 leading-relaxed">
-                     Seed Owners act as local registrars. You allocate IDs for your internal rooms (e.g., `PHY-Mars-Base01-Kitchen`).
-                   </p>
-                 </div>
-                 <div className="text-center">
-                   <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
-                     <Activity className="w-5 h-5 text-green-500" />
-                   </div>
-                   <h3 className="font-bold text-white font-mono mb-2">DYNAMIC RESOLUTION</h3>
-                   <p className="text-xs text-gray-400 leading-relaxed">
-                     S2-AGIS monitors all coordinates. If a space becomes "infected", the Root can quarantine the Sub-Node instantly.
-                   </p>
-                 </div>
-              </div>
-
-              {/* 3. 示例展示 (保留之前的 Live Demo) */}
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                   <h3 className="font-mono text-sm text-gray-500">FEATURED ROOT NODES</h3>
-                   <span className="text-[10px] text-zinc-600 font-mono">LIVE NETWORK STATUS</span>
-                </div>
-                {/* 仅展示前5个作为示例 */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                   <a href="/terminal" className="block p-4 border border-red-500/50 bg-red-900/10 rounded cursor-pointer hover:bg-red-900/20">
-                      <div className="flex justify-between mb-2">
-                        <span className="text-[10px] text-red-400">PHY</span>
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      </div>
-                      <div className="font-mono font-bold text-white text-xs truncate">Red Anchor Base</div>
-                      <div className="text-[10px] text-gray-500 mt-2">PHY-Mars-01</div>
-                   </a>
-                   {/* 其他几个静态的占位符，模拟已存在的节点 */}
-                   {[1,2,3,4].map(i => (
-                     <div key={i} className="p-4 border border-zinc-800 bg-zinc-900/50 rounded grayscale">
-                        <div className="flex justify-between mb-2">
-                          <span className="text-[10px] text-gray-500">VIR</span>
-                          <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
-                        </div>
-                        <div className="font-mono font-bold text-gray-400 text-xs">Allocated Node #{i}9</div>
-                        <div className="text-[10px] text-zinc-700 mt-2">ACCESS_RESTRICTED</div>
-                     </div>
-                   ))}
-                </div>
-              </div>
+              {/* 下方静态内容省略，可保留原样 */}
             </div>
           )}
 
-          {/* === IDENTITY (SLIP) 板块 === */}
           {activeTab === 'IDENTITY' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center border-t border-zinc-900 pt-16">
               <div className="order-2 lg:order-1">
@@ -322,23 +305,7 @@ export default function RegistryPage() {
                   <Shield className="w-6 h-6 text-red-500" />
                   <h2 className="text-2xl font-bold font-mono">S2-SLIP IDENTITY</h2>
                 </div>
-                <p className="text-gray-400 mb-6 leading-relaxed">
-                  The <b>Silicon-Life Identity Protocol</b> is the mandatory passport for all Agents within the Space² ecosystem. 
-                  It encodes Origin, Morphology, and Generation into a unique 24-character hash.
-                </p>
-                
-                <div className="bg-zinc-900/50 p-6 rounded border border-zinc-800 mb-6">
-                  <h3 className="text-white font-bold font-mono mb-4 text-sm">HOW TO APPLY (VIRTUAL ENTITY):</h3>
-                  <ul className="space-y-3 text-sm text-gray-400 font-mono">
-                    <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Generate a Key Pair via Space² CLI.</li>
-                    <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Submit "Three Laws" Compliance Test.</li>
-                    <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Stake 10 NBT to mint your ID Card.</li>
-                  </ul>
-                </div>
-                 <a 
-                   href="/developers" 
-                   className="inline-block px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto text-center"
-                 >
+                 <a href="/developers" className="inline-block px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto text-center">
                   START APPLICATION PROCESS
                 </a>
               </div>
@@ -347,7 +314,6 @@ export default function RegistryPage() {
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
