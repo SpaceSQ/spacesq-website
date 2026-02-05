@@ -46,24 +46,16 @@ const Navbar = () => (
         </div>
         <div className="hidden md:block">
           <div className="ml-10 flex items-baseline space-x-8">
-{['MANIFESTO', 'CONSTITUTION', 'GENESIS', 'REGISTRY', 'DEVELOPERS','DOCS'].map((item) => (
-<a 
-    key={item} 
-    // 增加一个判断：如果是 DEVELOPERS，跳转 /developers
-    href={item === 'DOCS' ? '/docs' : item === 'REGISTRY' ? '/registry' : item === 'DEVELOPERS' ? '/developers' : `#${item.toLowerCase()}`} 
-    className="text-gray-400 hover:text-red-500 font-mono text-sm transition-colors"
-  >
-    {item}
-  </a>
-  <a 
-    key={item} 
-    // 下面这行逻辑：如果是 REGISTRY 或 DOCS，就跳新页面；否则跳锚点
-    href={item === 'DOCS' ? '/docs' : item === 'REGISTRY' ? '/registry' : `#${item.toLowerCase()}`} 
-    className="text-gray-400 hover:text-red-500 font-mono text-sm transition-colors"
-  >
-    {item}
-  </a>
-))}
+            {/* 这里更新了 DEVELOPERS 链接逻辑 */}
+            {['MANIFESTO', 'CONSTITUTION', 'GENESIS', 'REGISTRY', 'DEVELOPERS', 'DOCS'].map((item) => (
+              <a 
+                key={item} 
+                href={item === 'DOCS' ? '/docs' : item === 'REGISTRY' ? '/registry' : item === 'DEVELOPERS' ? '/developers' : `#${item.toLowerCase()}`} 
+                className="text-gray-400 hover:text-red-500 font-mono text-sm transition-colors"
+              >
+                {item}
+              </a>
+            ))}
           </div>
         </div>
         <div className="flex items-center">
