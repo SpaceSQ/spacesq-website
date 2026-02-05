@@ -47,10 +47,10 @@ const Navbar = () => (
         <div className="hidden md:block">
           <div className="ml-10 flex items-baseline space-x-8">
             {/* 这里更新了 DEVELOPERS 链接逻辑 */}
-            {['MANIFESTO', 'CONSTITUTION', 'GENESIS', 'REGISTRY', 'DEVELOPERS', 'DOCS'].map((item) => (
+            {['MANIFESTO', 'SAFETY', 'GENESIS', 'REGISTRY', 'DEVELOPERS', 'DOCS'].map((item) => (
               <a 
                 key={item} 
-                href={item === 'DOCS' ? '/docs' : item === 'REGISTRY' ? '/registry' : item === 'DEVELOPERS' ? '/developers' : `#${item.toLowerCase()}`} 
+                href={item === 'DOCS' ? '/docs' : item === 'SAFETY' ? '/safety' :  item === 'REGISTRY' ? '/registry' : item === 'DEVELOPERS' ? '/developers' : `#${item.toLowerCase()}`} 
                 className="text-gray-400 hover:text-red-500 font-mono text-sm transition-colors"
               >
                 {item}
