@@ -167,11 +167,12 @@ const SpaceRegistrar = () => {
              </div>
           )}
 
-          {status === 'ERROR' && (
-             <div className="text-center py-4 text-red-500 text-xs font-mono">
-               DATABASE CONNECTION FAILED. PLEASE CHECK .ENV.LOCAL CONFIG.
-             </div>
-          )}
+{status === 'ERROR' && (
+   <div className="text-center py-4 text-red-500 text-xs font-mono bg-red-900/20 rounded p-2 border border-red-500/50">
+     <p className="font-bold">CONNECTION FAILED:</p>
+     <p>{errorMsg}</p> {/* 👈 显示具体错误 */}
+   </div>
+)}
 
           {status === 'TAKEN' && (
             <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center animate-fade-in">
