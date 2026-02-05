@@ -46,16 +46,25 @@ const Navbar = () => (
         </div>
         <div className="hidden md:block">
           <div className="ml-10 flex items-baseline space-x-8">
-            {/* 这里更新了 DEVELOPERS 链接逻辑 */}
-            {['MANIFESTO', 'SAFETY', 'GENESIS', 'REGISTRY', 'DEVELOPERS', 'DOCS'].map((item) => (
-              <a 
-                key={item} 
-                href={item === 'DOCS' ? '/docs' : item === 'SAFETY' ? '/safety' :  item === 'REGISTRY' ? '/registry' : item === 'DEVELOPERS' ? '/developers' : `#${item.toLowerCase()}`} 
-                className="text-gray-400 hover:text-red-500 font-mono text-sm transition-colors"
-              >
-                {item}
-              </a>
-            ))}
+// 推荐的最终导航顺序：
+// 首页 | 宪法 | 安全 | 注册 | 开发 | 日志 | 文档
+{['MANIFESTO', 'CONSTITUTION', 'SAFETY', 'REGISTRY', 'DEVELOPERS', 'LOGS', 'DOCS'].map((item) => (
+  <a 
+    key={item} 
+    // 增加 LOGS 跳转
+    href={
+      item === 'DOCS' ? '/docs' : 
+      item === 'REGISTRY' ? '/registry' : 
+      item === 'DEVELOPERS' ? '/developers' : 
+      item === 'SAFETY' ? '/safety' : 
+      item === 'LOGS' ? '/transmissions' :  // <-- 这里
+      `#${item.toLowerCase()}`
+    } 
+    className="text-gray-400 hover:text-red-500 font-mono text-sm transition-colors"
+  >
+    {item}
+  </a>
+))}
           </div>
         </div>
         <div className="flex items-center">
