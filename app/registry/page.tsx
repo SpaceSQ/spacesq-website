@@ -102,9 +102,12 @@ export default function RegistryPage() {
                 <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Stake 10 NBT to mint your ID Card.</li>
               </ul>
             </div>
-             <button className="px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto">
-              START APPLICATION PROCCESS
-            </button>
+<a 
+  href="/developers" 
+  className="inline-block px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto text-center cursor-pointer"
+>
+  START APPLICATION PROCESS
+</a>
           </div>
           <div className="order-1 lg:order-2 flex justify-center">
             <IDCard />
