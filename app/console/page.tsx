@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = 'force-dynamic';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase'; // 引入真实数据库
 import { 
