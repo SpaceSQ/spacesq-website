@@ -45,6 +45,7 @@ const SpaceRegistrar = () => {
   const [domain, setDomain] = useState("");
   const [type, setType] = useState("VIR");
   const [status, setStatus] = useState<'IDLE' | 'CHECKING' | 'AVAILABLE' | 'TAKEN' | 'ERROR'>('IDLE');
+  const [errorMsg, setErrorMsg] = useState("");
   const [step, setStep] = useState(1);
   const [regStatus, setRegStatus] = useState<'IDLE' | 'SUBMITTING' | 'SUCCESS'>('IDLE');
 
