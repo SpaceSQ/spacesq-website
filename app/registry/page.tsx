@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Shield, Globe, Cpu, ArrowLeft, Grid, Database, CheckCircle, Lock } from 'lucide-react';
+import { Shield, Globe, Cpu, ArrowLeft, Grid, Database, CheckCircle, Lock, Terminal } from 'lucide-react';
 
 // --- 组件：S2-SLIP 身份证展示 ---
 const IDCard = () => (
@@ -151,12 +151,10 @@ export default function RegistryPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {seeds.map((seed, index) => (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {seeds.map((seed, index) => (
-              // 这里的逻辑：如果是第一个种子(index === 0)，就变成链接跳转到 /terminal
               index === 0 ? (
+                // 1. 如果是第1个 (Red Anchor)，渲染成 <a> 链接，带 LIVE DEMO 标签
                 <a key={index} href="/terminal" className="block group relative bg-zinc-900 border border-red-500/30 hover:bg-red-900/10 hover:border-red-500 p-4 rounded transition-all duration-300 cursor-pointer">
-                  <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold animate-pulse">
+                  <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold animate-pulse z-10">
                     LIVE DEMO
                   </div>
                   <div className="flex justify-between items-start mb-3">
@@ -173,7 +171,7 @@ export default function RegistryPage() {
                   </div>
                 </a>
               ) : (
-                // 其他种子保持原来的不可点击状态
+                // 2. 如果是其他种子
                 <div key={index} className="group relative bg-zinc-900 border border-zinc-800 hover:border-gray-600 p-4 rounded transition-all duration-300 opacity-70 hover:opacity-100">
                   <div className="flex justify-between items-start mb-3">
                     <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${seed.type === 'PHYSICAL' ? 'bg-red-900/20 text-red-400' : 'bg-blue-900/20 text-blue-400'}`}>
@@ -189,21 +187,6 @@ export default function RegistryPage() {
                   </div>
                 </div>
               )
-            ))}
-          </div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${seed.type === 'PHYSICAL' ? 'bg-red-900/20 text-red-400' : 'bg-blue-900/20 text-blue-400'}`}>
-                    {seed.type.substring(0,3)}
-                  </span>
-                  <div className={`w-2 h-2 rounded-full ${seed.status === 'ACTIVE' || seed.status === 'ONLINE' ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-                </div>
-                <h3 className="text-white font-bold font-mono text-sm mb-1 truncate">{seed.name}</h3>
-                <p className="text-gray-500 text-xs font-mono mb-4 h-8 overflow-hidden">{seed.desc}</p>
-                <div className="text-[10px] text-zinc-600 font-mono border-t border-zinc-800 pt-2 flex justify-between">
-                  <span>ID: {seed.id}</span>
-                  <ArrowLeft className="w-3 h-3 rotate-180 group-hover:text-white transition-colors" />
-                </div>
-              </div>
             ))}
           </div>
         </div>
