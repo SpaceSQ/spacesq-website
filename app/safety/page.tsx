@@ -128,9 +128,13 @@ export default function SafetyPage() {
             "Preventing the Unthinkable: A Technical Guide to Containing Silicon Intelligence."
             <br/>(v1.0 Draft / For Policymakers & Architects)
           </p>
-          <button className="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold font-mono rounded transition-colors" disabled>
-            DOCUMENT COMING SOON...
-          </button>
+<a 
+  href="/S2-SP_Whitepaper_v1.0.pdf" 
+  download
+  className="inline-block px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold font-mono rounded transition-colors"
+>
+  DOWNLOAD WHITE PAPER [PDF]
+</a>
         </div>
 
       </div>
