@@ -46,8 +46,6 @@ const Navbar = () => (
         </div>
         <div className="hidden md:block">
           <div className="ml-10 flex items-baseline space-x-8">
-// 推荐的最终导航顺序：
-// 首页 | 宪法 | 安全 | 注册 | 开发 | 日志 | 文档
 {['MANIFESTO', 'CONSTITUTION', 'SAFETY', 'REGISTRY', 'DEVELOPERS', 'LOGS', 'DOCS'].map((item) => (
   <a 
     key={item} 
