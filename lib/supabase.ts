@@ -1,8 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ⚠️ 暴力测试模式：直接把真实的 URL 和 Key 填在这里
-// 注意：不要把这个文件长期留在 GitHub 上，测试完我们再改回环境变量模式
-const hardcodedUrl = 'https://ajmcstwhrblnbcavlqlq.supabase.co'; 
-const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqbWNzdHdocmJsbmJjYXZscWxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyNzU2MTUsImV4cCI6MjA4NTg1MTYxNX0.KpC9KtTWJLb7_QzwNr6aWVQiwe1rgTpz1CgP4pp_9bk';
+// 1. 获取原始内容
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(hardcodedUrl, hardcodedKey);
+// 2. 🧹 强力清洗 (洗掉可能存在的引号和空格)
+const cleanUrl = rawUrl.replace(/["']/g, '').trim();
+const cleanKey = rawKey.replace(/["']/g, '').trim();
+
+// 3. ✅ 兜底策略
+// 如果读不到(构建时)或者格式不对，用假地址顶替，防止构建崩溃
+const urlToUse = cleanUrl.startsWith('http') ? cleanUrl : 'https://placeholder.supabase.co';
+const keyToUse = cleanKey.length > 0 ? cleanKey : 'placeholder-key';
+
+export const supabase = createClient(urlToUse, keyToUse);
