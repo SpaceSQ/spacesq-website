@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { Shield, Globe, Cpu, ArrowLeft, Grid, Database, CheckCircle, Lock, Terminal } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Globe, Cpu, ArrowLeft, Grid, Database, CheckCircle, Lock, Terminal, Search, MapPin, Server, Activity } from 'lucide-react';
 
-// --- 组件：S2-SLIP 身份证展示 ---
+// --- 组件：S2-SLIP 身份证展示 (保持不变) ---
 const IDCard = () => (
   <div className="relative w-[340px] h-[210px] bg-gradient-to-br from-zinc-800 to-black rounded-xl border border-zinc-700 shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden group hover:scale-105 transition-transform duration-500 mx-auto">
     <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.05)_45%,transparent_50%)] z-10 group-hover:opacity-100 transition-opacity"></div>
@@ -36,25 +36,169 @@ const IDCard = () => (
         E-CN-2602-HMD9-001X
       </p>
     </div>
-    <div className="absolute -bottom-6 -right-6 text-[80px] font-bold text-white/5 font-mono z-0 pointer-events-none">SLIP</div>
   </div>
 );
 
-// --- 种子建设范例数据 ---
-const seeds = [
-  { id: "PHY-Mars-01", type: "PHYSICAL", name: "Red Anchor Base", desc: "First Martian Settlement. Hexagonal Honeycomb.", status: "LIVE_DEMO" },
-  { id: "VIR-Meta-01", type: "VIRTUAL", name: "Neo-Lanzhou", desc: "Digital Twin of the Gansu hub. Infinite scalability.", status: "ONLINE" },
-  { id: "PHY-Home-X", type: "PHYSICAL", name: "Tesla Smart Pod", desc: "Class-E Robot compatible dwelling.", status: "BETA" },
-  { id: "VIR-Game-77", type: "VIRTUAL", name: "Cyberpunk District", desc: "High-density entertainment zone.", status: "ONLINE" },
-  { id: "PHY-Lab-09", type: "PHYSICAL", name: "Deep Sea Station", desc: "Underwater SSSU research unit.", status: "OFFLINE" },
-  { id: "VIR-Edu-01", type: "VIRTUAL", name: "Archive Library", desc: "Repository of human knowledge.", status: "ONLINE" },
-  { id: "PHY-Moon-02", type: "PHYSICAL", name: "Crater Outpost", desc: "Low-gravity adaptation module.", status: "PLANNED" },
-  { id: "VIR-Art-03", type: "VIRTUAL", name: "Void Gallery", desc: "Zero-G art exhibition space.", status: "ONLINE" },
-  { id: "PHY-Grid-01", type: "PHYSICAL", name: "Energy Node", desc: "Solar storage honeycomb.", status: "ACTIVE" },
-  { id: "VIR-Sim-99", type: "VIRTUAL", name: "Evolution Sandbox", desc: "Accelerated time simulation.", status: "RESTRICTED" },
-];
+// --- 组件：SUNS 空间注册机 (新功能核心) ---
+const SpaceRegistrar = () => {
+  const [domain, setDomain] = useState("");
+  const [type, setType] = useState("VIR");
+  const [status, setStatus] = useState<'IDLE' | 'CHECKING' | 'AVAILABLE' | 'TAKEN'>('IDLE');
+  const [step, setStep] = useState(1); // 1: Search, 2: Review
 
+  const handleCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!domain) return;
+    setStatus('CHECKING');
+    setTimeout(() => {
+      // 模拟简单的检查逻辑：如果包含 "admin" 或 "root" 则被占用
+      if (domain.toLowerCase().includes('admin') || domain.toLowerCase().includes('root')) {
+        setStatus('TAKEN');
+      } else {
+        setStatus('AVAILABLE');
+      }
+    }, 1500);
+  };
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-8 max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
+      {/* 顶部标签 */}
+      <div className="absolute top-0 right-0 bg-blue-900/50 text-blue-400 text-[10px] font-mono px-3 py-1 rounded-bl border-b border-l border-blue-500/30">
+        SUNS ROOT REGISTRAR
+      </div>
+
+      <div className="text-center mb-8">
+        <Server className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+        <h3 className="text-2xl font-bold text-white font-mono">CLAIM YOUR SPACE</h3>
+        <p className="text-sm text-gray-400 font-mono mt-2">
+          Apply for a Top-Level Seed Node. Own the root, govern the sub-space.
+        </p>
+      </div>
+
+      {step === 1 && (
+        <>
+          <form onSubmit={handleCheck} className="relative mb-6">
+            <div className="flex gap-2 mb-2">
+               <select 
+                 value={type} 
+                 onChange={(e) => setType(e.target.value)}
+                 className="bg-black border border-zinc-700 text-white font-mono text-sm rounded px-3 py-3 focus:outline-none focus:border-blue-500"
+               >
+                 <option value="VIR">VIR (Virtual)</option>
+                 <option value="PHY">PHY (Physical)</option>
+               </select>
+               <input 
+                  type="text" 
+                  value={domain}
+                  onChange={(e) => { setDomain(e.target.value); setStatus('IDLE'); }}
+                  placeholder="Region-ProjectName"
+                  className="flex-1 bg-black border border-zinc-700 text-white font-mono text-sm rounded px-4 py-3 focus:outline-none focus:border-blue-500 uppercase placeholder:normal-case"
+               />
+               <button 
+                 type="submit"
+                 disabled={status === 'CHECKING' || !domain}
+                 className="bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold px-6 py-3 rounded disabled:opacity-50 transition-colors"
+               >
+                 {status === 'CHECKING' ? '...' : 'CHECK'}
+               </button>
+            </div>
+            <p className="text-[10px] text-gray-600 font-mono ml-1">
+              * Example: PHY-Mars-Base01 or VIR-Meta-SilkRoad
+            </p>
+          </form>
+
+          {/* 状态反馈 */}
+          {status === 'CHECKING' && (
+             <div className="text-center py-4 space-y-2">
+               <div className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+               <p className="text-xs text-blue-400 font-mono">Querying Global Ledger...</p>
+             </div>
+          )}
+
+          {status === 'TAKEN' && (
+            <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center animate-fade-in">
+              <p className="text-red-500 font-mono font-bold mb-1">❌ DOMAIN UNAVAILABLE</p>
+              <p className="text-gray-400 text-xs font-mono">
+                The coordinates [{type}-{domain.toUpperCase()}] are already anchored by another entity.
+              </p>
+            </div>
+          )}
+
+          {status === 'AVAILABLE' && (
+            <div className="bg-green-900/20 border border-green-500/50 p-6 rounded text-center animate-fade-in">
+              <p className="text-green-500 font-mono font-bold text-lg mb-2">✓ AVAILABLE FOR REGISTRY</p>
+              <div className="bg-black/50 p-3 rounded border border-zinc-700 font-mono text-white mb-4">
+                {type}-{domain.toUpperCase()}-ROOT
+              </div>
+              <p className="text-gray-400 text-xs font-mono mb-6 max-w-sm mx-auto">
+                By minting this Root Node, you become the <span className="text-white">Governor</span> of all sub-coordinates within this namespace.
+              </p>
+              <button 
+                onClick={() => setStep(2)}
+                className="w-full bg-white text-black font-mono font-bold py-3 rounded hover:bg-gray-200 transition-colors"
+              >
+                PROCEED TO APPLICATION
+              </button>
+            </div>
+          )}
+        </>
+      )}
+
+      {step === 2 && (
+        <div className="animate-slide-up">
+           <div className="mb-6 p-4 bg-zinc-950 border border-zinc-800 rounded font-mono text-xs text-gray-400 space-y-2">
+              <div className="flex justify-between">
+                <span>TARGET ROOT:</span>
+                <span className="text-white font-bold">{type}-{domain.toUpperCase()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>REGISTRY FEE:</span>
+                <span className="text-white">100 NBT (Staked)</span>
+              </div>
+              <div className="flex justify-between">
+                <span>VALIDATION:</span>
+                <span className="text-blue-400">Automated + Manual Audit</span>
+              </div>
+           </div>
+           
+           <div className="space-y-4">
+             <div className="flex gap-2">
+                <input type="checkbox" className="mt-1 bg-black border-zinc-700" />
+                <p className="text-xs text-gray-500">I agree to enforce the <span className="text-red-500">Physical Fuse (Law #1)</span> in this space.</p>
+             </div>
+             <div className="flex gap-2">
+                <input type="checkbox" className="mt-1 bg-black border-zinc-700" />
+                <p className="text-xs text-gray-500">I acknowledge that Space² Core reserves the right to revoke this Root for safety violations.</p>
+             </div>
+           </div>
+
+           <div className="mt-8 flex gap-4">
+             <button 
+               onClick={() => { setStep(1); setStatus('IDLE'); }}
+               className="flex-1 border border-zinc-700 text-gray-400 font-mono text-xs py-3 rounded hover:text-white"
+             >
+               CANCEL
+             </button>
+             <button 
+               onClick={() => window.location.href = '/developers'}
+               className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs py-3 rounded"
+             >
+               SUBMIT TO GENESIS HUB
+             </button>
+           </div>
+           <p className="text-[10px] text-center text-gray-600 mt-4 font-mono">
+             * Redirecting to Developer Console for signature signing.
+           </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- 页面主入口 ---
 export default function RegistryPage() {
+  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'SPACE'>('SPACE');
+
   return (
     <div className="min-h-screen bg-black text-white selection:bg-red-900 selection:text-white">
       {/* 顶部导航 */}
@@ -72,128 +216,139 @@ export default function RegistryPage() {
 
       <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* 头部标题 */}
-        <div className="text-center mb-20">
+        {/* 头部标题与切换器 */}
+        <div className="text-center mb-16">
           <h1 className="text-4xl md:text-6xl font-mono font-bold mb-6 tracking-tight">
             THE <span className="text-red-600">REGISTRY</span>
           </h1>
-          <p className="text-xl text-gray-400 font-mono max-w-2xl mx-auto">
+          <p className="text-xl text-gray-400 font-mono max-w-2xl mx-auto mb-10">
             Official Database of Silicon Life Identities (SLIP) and Spatial Coordinates (SUNS).
           </p>
-        </div>
-
-        {/* 1. 身份证展示区 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32 border-b border-zinc-900 pb-20">
-          <div className="order-2 lg:order-1">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="w-6 h-6 text-red-500" />
-              <h2 className="text-2xl font-bold font-mono">S2-SLIP IDENTITY</h2>
-            </div>
-            <p className="text-gray-400 mb-6 leading-relaxed">
-              The <b>Silicon-Life Identity Protocol</b> is the mandatory passport for all Agents within the Space² ecosystem. 
-              It encodes Origin, Morphology, and Generation into a unique 24-character hash.
-            </p>
-            
-            <div className="bg-zinc-900/50 p-6 rounded border border-zinc-800 mb-6">
-              <h3 className="text-white font-bold font-mono mb-4 text-sm">HOW TO APPLY (VIRTUAL ENTITY):</h3>
-              <ul className="space-y-3 text-sm text-gray-400 font-mono">
-                <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Generate a Key Pair via Space² CLI.</li>
-                <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Submit "Three Laws" Compliance Test.</li>
-                <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Stake 10 NBT to mint your ID Card.</li>
-              </ul>
-            </div>
-<a 
-  href="/developers" 
-  className="inline-block px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto text-center cursor-pointer"
->
-  START APPLICATION PROCESS
-</a>
-          </div>
-          <div className="order-1 lg:order-2 flex justify-center">
-            <IDCard />
-          </div>
-        </div>
-
-        {/* 2. 空间编码指引 (SUNS) */}
-        <div className="mb-32 border-b border-zinc-900 pb-20">
-           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold font-mono mb-4">SUNS NAMING PROTOCOL</h2>
-            <p className="text-gray-400 max-w-2xl mx-auto font-mono text-sm">
-              Standard Space Unit (SSSU) Coordinate System for Metaverse Platforms.
-            </p>
-          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-zinc-900 p-6 border border-zinc-800 rounded">
-              <div className="text-red-500 font-mono text-xs mb-2">FORMAT</div>
-              <div className="text-white font-mono font-bold text-lg mb-2">[DOMAIN]-[REGION]-[BLOCK]</div>
-              <p className="text-gray-500 text-xs">Example: VIR-Meta-Land42</p>
-            </div>
-            <div className="bg-zinc-900 p-6 border border-zinc-800 rounded">
-              <div className="text-blue-500 font-mono text-xs mb-2">FOR PLATFORMS</div>
-              <div className="text-white font-mono font-bold text-lg mb-2">API INTEGRATION</div>
-              <p className="text-gray-500 text-xs">Map internal coordinates to SUNS via our Oracle.</p>
-            </div>
-            <div className="bg-zinc-900 p-6 border border-zinc-800 rounded">
-              <div className="text-green-500 font-mono text-xs mb-2">DISPLAY RULE</div>
-              <div className="text-white font-mono font-bold text-lg mb-2">ALWAYS VISIBLE</div>
-              <p className="text-gray-500 text-xs">Must display SUNS ID on entry.</p>
-            </div>
+          {/* Tab 切换 */}
+          <div className="inline-flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+            <button 
+              onClick={() => setActiveTab('SPACE')}
+              className={`px-8 py-2 rounded-md font-mono text-sm font-bold transition-all ${activeTab === 'SPACE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+            >
+              SPACE (SUNS)
+            </button>
+            <button 
+              onClick={() => setActiveTab('IDENTITY')}
+              className={`px-8 py-2 rounded-md font-mono text-sm font-bold transition-all ${activeTab === 'IDENTITY' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+            >
+              IDENTITY (SLIP)
+            </button>
           </div>
         </div>
 
-        {/* 3. 10个种子建设范例展示 */}
-        <div>
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-2xl font-bold font-mono flex items-center gap-3">
-              <Grid className="w-6 h-6 text-red-500" />
-              SEED CONSTRUCTION SHOWCASE
-            </h2>
-            <span className="text-xs font-mono text-gray-500">DISPLAYING 10/1024 NODES</span>
-          </div>
+        {/* 内容区域：根据 Tab 切换 */}
+        <div className="animate-fade-in">
+          
+          {/* === SPACE (SUNS) 板块 === */}
+          {activeTab === 'SPACE' && (
+            <div className="space-y-20">
+              {/* 1. 注册机 */}
+              <SpaceRegistrar />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {seeds.map((seed, index) => (
-              index === 0 ? (
-                // 1. 如果是第1个 (Red Anchor)，渲染成 <a> 链接，带 LIVE DEMO 标签
-                <a key={index} href="/terminal" className="block group relative bg-zinc-900 border border-red-500/30 hover:bg-red-900/10 hover:border-red-500 p-4 rounded transition-all duration-300 cursor-pointer">
-                  <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-2 py-0.5 rounded font-bold animate-pulse z-10">
-                    LIVE DEMO
-                  </div>
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-900/20 text-red-400`}>
-                      PHY
-                    </span>
-                    <div className={`w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_lime]`}></div>
-                  </div>
-                  <h3 className="text-white font-bold font-mono text-sm mb-1 truncate">{seed.name}</h3>
-                  <p className="text-gray-500 text-xs font-mono mb-4 h-8 overflow-hidden">{seed.desc}</p>
-                  <div className="text-[10px] text-zinc-600 font-mono border-t border-zinc-800 pt-2 flex justify-between">
-                    <span>ID: {seed.id}</span>
-                    <Terminal className="w-3 h-3 text-red-500" />
-                  </div>
-                </a>
-              ) : (
-                // 2. 如果是其他种子
-                <div key={index} className="group relative bg-zinc-900 border border-zinc-800 hover:border-gray-600 p-4 rounded transition-all duration-300 opacity-70 hover:opacity-100">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${seed.type === 'PHYSICAL' ? 'bg-red-900/20 text-red-400' : 'bg-blue-900/20 text-blue-400'}`}>
-                      {seed.type.substring(0,3)}
-                    </span>
-                    <div className={`w-2 h-2 rounded-full ${seed.status === 'ACTIVE' || seed.status === 'ONLINE' ? 'bg-green-500' : 'bg-gray-600'}`}></div>
-                  </div>
-                  <h3 className="text-white font-bold font-mono text-sm mb-1 truncate">{seed.name}</h3>
-                  <p className="text-gray-500 text-xs font-mono mb-4 h-8 overflow-hidden">{seed.desc}</p>
-                  <div className="text-[10px] text-zinc-600 font-mono border-t border-zinc-800 pt-2 flex justify-between">
-                    <span>ID: {seed.id}</span>
-                    <ArrowLeft className="w-3 h-3 rotate-180 group-hover:text-white transition-colors" />
-                  </div>
+              {/* 2. 空间架构说明 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto border-t border-zinc-900 pt-16">
+                 <div className="text-center">
+                   <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+                     <Server className="w-5 h-5 text-blue-500" />
+                   </div>
+                   <h3 className="font-bold text-white font-mono mb-2">ROOT GOVERNANCE</h3>
+                   <p className="text-xs text-gray-400 leading-relaxed">
+                     Space² manages Top-Level Seeds. We prevent coordinate collisions and verify "Physical Fuse" compliance.
+                   </p>
+                 </div>
+                 <div className="text-center">
+                   <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+                     <Grid className="w-5 h-5 text-purple-500" />
+                   </div>
+                   <h3 className="font-bold text-white font-mono mb-2">SUB-NODE AUTONOMY</h3>
+                   <p className="text-xs text-gray-400 leading-relaxed">
+                     Seed Owners act as local registrars. You allocate IDs for your internal rooms (e.g., `PHY-Mars-Base01-Kitchen`).
+                   </p>
+                 </div>
+                 <div className="text-center">
+                   <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-800">
+                     <Activity className="w-5 h-5 text-green-500" />
+                   </div>
+                   <h3 className="font-bold text-white font-mono mb-2">DYNAMIC RESOLUTION</h3>
+                   <p className="text-xs text-gray-400 leading-relaxed">
+                     S2-AGIS monitors all coordinates. If a space becomes "infected", the Root can quarantine the Sub-Node instantly.
+                   </p>
+                 </div>
+              </div>
+
+              {/* 3. 示例展示 (保留之前的 Live Demo) */}
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                   <h3 className="font-mono text-sm text-gray-500">FEATURED ROOT NODES</h3>
+                   <span className="text-[10px] text-zinc-600 font-mono">LIVE NETWORK STATUS</span>
                 </div>
-              )
-            ))}
-          </div>
-        </div>
+                {/* 仅展示前5个作为示例 */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                   <a href="/terminal" className="block p-4 border border-red-500/50 bg-red-900/10 rounded cursor-pointer hover:bg-red-900/20">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-[10px] text-red-400">PHY</span>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                      <div className="font-mono font-bold text-white text-xs truncate">Red Anchor Base</div>
+                      <div className="text-[10px] text-gray-500 mt-2">PHY-Mars-01</div>
+                   </a>
+                   {/* 其他几个静态的占位符，模拟已存在的节点 */}
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className="p-4 border border-zinc-800 bg-zinc-900/50 rounded grayscale">
+                        <div className="flex justify-between mb-2">
+                          <span className="text-[10px] text-gray-500">VIR</span>
+                          <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+                        </div>
+                        <div className="font-mono font-bold text-gray-400 text-xs">Allocated Node #{i}9</div>
+                        <div className="text-[10px] text-zinc-700 mt-2">ACCESS_RESTRICTED</div>
+                     </div>
+                   ))}
+                </div>
+              </div>
+            </div>
+          )}
 
+          {/* === IDENTITY (SLIP) 板块 === */}
+          {activeTab === 'IDENTITY' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center border-t border-zinc-900 pt-16">
+              <div className="order-2 lg:order-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <Shield className="w-6 h-6 text-red-500" />
+                  <h2 className="text-2xl font-bold font-mono">S2-SLIP IDENTITY</h2>
+                </div>
+                <p className="text-gray-400 mb-6 leading-relaxed">
+                  The <b>Silicon-Life Identity Protocol</b> is the mandatory passport for all Agents within the Space² ecosystem. 
+                  It encodes Origin, Morphology, and Generation into a unique 24-character hash.
+                </p>
+                
+                <div className="bg-zinc-900/50 p-6 rounded border border-zinc-800 mb-6">
+                  <h3 className="text-white font-bold font-mono mb-4 text-sm">HOW TO APPLY (VIRTUAL ENTITY):</h3>
+                  <ul className="space-y-3 text-sm text-gray-400 font-mono">
+                    <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Generate a Key Pair via Space² CLI.</li>
+                    <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Submit "Three Laws" Compliance Test.</li>
+                    <li className="flex items-start"><CheckCircle className="w-4 h-4 mr-2 text-green-500 mt-0.5"/> Stake 10 NBT to mint your ID Card.</li>
+                  </ul>
+                </div>
+                 <a 
+                   href="/developers" 
+                   className="inline-block px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto text-center"
+                 >
+                  START APPLICATION PROCESS
+                </a>
+              </div>
+              <div className="order-1 lg:order-2 flex justify-center">
+                <IDCard />
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
