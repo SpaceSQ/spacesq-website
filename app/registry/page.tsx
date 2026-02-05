@@ -77,10 +77,11 @@ const SpaceRegistrar = () => {
       } else {
         setStatus('AVAILABLE'); // 没查到，说明可用
       }
-    } catch (err) {
-      console.error("Network Error:", err);
-      setStatus('ERROR');
-    }
+} catch (err: any) {
+  console.error("Network Error:", err);
+  setErrorMsg(err.message || JSON.stringify(err)); // 👈 抓住具体错误
+  setStatus('ERROR');
+}
   };
 
   // 2. 真实注册函数
