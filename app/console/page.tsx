@@ -1,5 +1,6 @@
 "use client";
 export const dynamic = 'force-dynamic';
+import { useRouter } from 'next/navigation';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase'; // 引入真实数据库
 import { 
@@ -18,6 +19,7 @@ interface SpaceNode {
 }
 
 export default function ConsolePage() {
+  const router = useRouter(); // 👈 初始化路由
   const [spaces, setSpaces] = useState<SpaceNode[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,17 @@ export default function ConsolePage() {
   };
 
   // 页面加载时执行
+
   useEffect(() => {
+    // 🛡️ 安检开始
+    const token = localStorage.getItem('planck_auth_token');
+    if (token !== 'ACCESS_GRANTED') {
+      // 如果没证，直接踢到登录页
+      router.push('/login');
+      return; // 停止执行后面的代码
+    }
+    // 🛡️ 安检结束
+    
     fetchSpaces();
     
     // 开启实时监听 (Supabase Realtime)
