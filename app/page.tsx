@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = 'force-dynamic';
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabase';// 引入真实的数据库连接
+import { supabase } from '../lib/supabase';// 引入真实的数据库连接
 import { Shield, Globe, Cpu, ArrowLeft, Grid, Server, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
 
 // --- 组件：S2-SLIP 身份证展示 (保持不变) ---
