@@ -54,7 +54,7 @@ export default function LoginPage() {
 
           {error && (
             <div className="text-red-500 text-xs text-center animate-pulse">
-              > {error}
+              {">"} {error}
             </div>
           )}
 
