@@ -149,9 +149,11 @@ suns_id: fullId,
 
       if (error) throw error;
       setStep(4); // 完成页
-    } catch (err: any) {
-      setStatus('ERROR');
-      setErrorMsg(err.message);
+} catch (e: any) {
+      setComputeStatus('FAILED');
+      // 👇 修改这一行，显示具体的错误信息
+      setErrorMsg(`COMPUTE ERROR: ${e.message}`); 
+      console.error("Compute Test Failed:", e);
     }
   };
 
