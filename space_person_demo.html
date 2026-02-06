@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SpaceSQ // 空间人社交场域模拟器</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --grid: #1e293b;
+            --text: #94a3b8;
+            --highlight: #38bdf8;
+            --conflict: #ef4444;
+            --social: #a855f7;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', monospace;
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        /* 左侧：可视化沙盘 */
+        .stage {
+            flex: 2;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: 
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 50px 50px; /* 50cm 微网格 */
+        }
+        
+        /* 空间容器 (2m x 2m) */
+        .room-boundary {
+            width: 400px; /* 2m (1px = 0.5cm) */
+            height: 400px;
+            border: 2px dashed #475569;
+            position: relative;
+        }
+        .room-label {
+            position: absolute;
+            top: -25px;
+            left: 0;
+            font-size: 12px;
+            color: #475569;
+        }
+
+        /* 空间人 (气泡) */
+        .bubble {
+            width: 100px; /* 0.5m 核心区 + 气场 */
+            height: 100px;
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: grab;
+            transition: background 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(2px);
+            font-weight: bold;
+            color: white;
+            user-select: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        .bubble:active { cursor: grabbing; }
+
+        /* 气泡 - 用户A (喜冷) */
+        #userA {
+            background: rgba(56, 189, 248, 0.3); /* Blue */
+            border: 2px solid rgba(56, 189, 248, 0.8);
+            top: 50px; left: 50px;
+        }
+        
+        /* 气泡 - 用户B (喜暖) */
+        #userB {
+            background: rgba(251, 146, 60, 0.3); /* Orange */
+            border: 2px solid rgba(251, 146, 60, 0.8);
+            top: 250px; left: 250px;
+        }
+
+        /* 右侧：AI 脑图日志 */
+        .sidebar {
+            flex: 1;
+            background: #020617;
+            border-left: 1px solid #1e293b;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        h3 { margin: 0 0 10px 0; color: white; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .log-console {
+            flex: 1;
+            background: black;
+            border: 1px solid #333;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            overflow-y: auto;
+            color: #22c55e;
+        }
+        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #111; padding-bottom: 2px; }
+        .log-warn { color: #facc15; }
+        .log-err { color: #ef4444; }
+
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <div class="room-boundary" id="room">
+            <div class="room-label">STANDARD UNIT (2m x 2m) // SCALE: 1px = 0.5cm</div>
+            
+            <div id="userA" class="bubble" data-temp="20" data-lux="600">
+                A
+                <div style="font-size:8px; position:absolute; bottom:20px;">20°C</div>
+            </div>
+
+            <div id="userB" class="bubble" data-temp="28" data-lux="300">
+                B
+                <div style="font-size:8px; position:absolute; bottom:20px;">28°C</div>
+            </div>
+            
+            <div id="fusionPoint" style="position:absolute; width:10px; height:10px; background:white; border-radius:50%; opacity:0; pointer-events:none; transition:opacity 0.3s;"></div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="panel">
+            <h3>User Profile (Definition)</h3>
+            <div class="data-row">
+                <span style="color:#38bdf8">User A (Cool/Focus)</span>
+                <span>Temp: 20°C | Lux: 600</span>
+            </div>
+            <div class="data-row">
+                <span style="color:#fb923c">User B (Warm/Relax)</span>
+                <span>Temp: 28°C | Lux: 300</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>SpaceSQ Kernel (Real-time)</h3>
+            <div class="data-row">
+                <span>Distance:</span>
+                <span id="distVal" style="font-weight:bold">--</span>
+            </div>
+            <div class="data-row">
+                <span>Mode:</span>
+                <span id="modeVal" style="font-weight:bold; color:#aaa">INDEPENDENT</span>
+            </div>
+            <hr style="border:0; border-top:1px solid #333; margin:10px 0;">
+            <div class="data-row">
+                <span>Target Temp:</span>
+                <span id="targetTemp" style="font-weight:bold; color:white">--</span>
+            </div>
+            <div class="data-row">
+                <span>Target Lux:</span>
+                <span id="targetLux" style="font-weight:bold; color:white">--</span>
+            </div>
+        </div>
+
+        <div class="log-console" id="logger">
+            <div class="log-entry">[SYSTEM] SpaceSQ "Space Person" Engine Loaded.</div>
+            <div class="log-entry">[SYSTEM] Standard Unit 2x2x2.4m Initialized.</div>
+            <div class="log-entry">[WAITING] Drag bubbles to simulate interaction...</div>
+        </div>
+    </div>
+
+    <script>
+        const userA = document.getElementById('userA');
+        const userB = document.getElementById('userB');
+        const room = document.getElementById('room');
+        const fusionPoint = document.getElementById('fusionPoint');
+        
+        let isDragging = null;
+        let offset = { x: 0, y: 0 };
+
+        // 拖拽逻辑
+        function startDrag(e) {
+            isDragging = e.target;
+            const rect = isDragging.getBoundingClientRect();
+            offset.x = e.clientX - rect.left;
+            offset.y = e.clientY - rect.top;
+            userA.style.zIndex = isDragging === userA ? 10 : 1;
+            userB.style.zIndex = isDragging === userB ? 10 : 1;
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const roomRect = room.getBoundingClientRect();
+            let x = e.clientX - roomRect.left - offset.x;
+            let y = e.clientY - roomRect.top - offset.y;
+
+            // 边界限制 (保持在 2x2m 单元内)
+            x = Math.max(0, Math.min(x, roomRect.width - 100));
+            y = Math.max(0, Math.min(y, roomRect.height - 100));
+
+            isDragging.style.left = x + 'px';
+            isDragging.style.top = y + 'px';
+
+            calculatePhysics();
+        }
+
+        function stopDrag() {
+            isDragging = null;
+        }
+
+        userA.addEventListener('mousedown', startDrag);
+        userB.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+
+        // 核心：SpaceSQ 物理场计算引擎
+        function calculatePhysics() {
+            // 1. 获取位置
+            const ax = userA.offsetLeft + 50; // 中心点
+            const ay = userA.offsetTop + 50;
+            const bx = userB.offsetLeft + 50;
+            const by = userB.offsetTop + 50;
+
+            // 2. 计算距离 (像素距离, 200px = 1m)
+            const dist = Math.sqrt(Math.pow(bx-ax, 2) + Math.pow(by-ay, 2));
+            const distMeters = (dist / 200).toFixed(2); // 换算成米
+
+            document.getElementById('distVal').innerText = distMeters + " m";
+
+            // 3. 状态机判断
+            const modeEl = document.getElementById('modeVal');
+            
+            if (dist < 80) {
+                // --- 物理冲突 (Collision) ---
+                modeEl.innerText = "⛔ PHYSICAL CONFLICT";
+                modeEl.style.color = "#ef4444";
+                fusionPoint.style.opacity = 0;
+                log(`[ALERT] 占位冲突! 距离 ${distMeters}m 小于最小包络。`, "err");
+                
+                // 视觉反馈：红色警报
+                userA.style.boxShadow = "0 0 30px red";
+                userB.style.boxShadow = "0 0 30px red";
+                
+            } else if (dist < 250) {
+                // --- 社交融合 (Social Fusion) ---
+                modeEl.innerText = "🤝 SOCIAL FUSION";
+                modeEl.style.color = "#a855f7";
+                
+                // 计算融合中心
+                const cx = (ax + bx) / 2;
+                const cy = (ay + by) / 2;
+                fusionPoint.style.left = (cx - 5) + 'px';
+                fusionPoint.style.top = (cy - 5) + 'px';
+                fusionPoint.style.opacity = 1;
+
+                // 要素融合算法 (加权平均)
+                // 距离越近，融合度越高
+                const factor = 1 - (dist / 250); 
+                const temp = (20 + 28) / 2; // 简单平均
+                const lux = (600 + 300) / 2;
+
+                updateEnvironment(temp, lux);
+                
+                // 视觉反馈：紫色融合场
+                userA.style.borderColor = "#a855f7";
+                userB.style.borderColor = "#a855f7";
+                userA.style.boxShadow = `0 0 ${20 + factor*20}px #a855f7`;
+                userB.style.boxShadow = `0 0 ${20 + factor*20}px #a855f7`;
+                
+                // 限流日志
+                if (Math.random() > 0.8) {
+                    log(`[AI] 检测到社交场。计算梯度中和... Temp Set: ${temp}°C`);
+                }
+
+            } else {
+                // --- 独立模式 (Independent) ---
+                modeEl.innerText = "INDEPENDENT";
+                modeEl.style.color = "#aaa";
+                fusionPoint.style.opacity = 0;
+
+                updateEnvironment("--", "--");
+
+                // 恢复各自颜色
+                userA.style.borderColor = "rgba(56, 189, 248, 0.8)";
+                userB.style.borderColor = "rgba(251, 146, 60, 0.8)";
+                userA.style.boxShadow = "0 0 20px rgba(0,0,0,0.3)";
+                userB.style.boxShadow = "0 0 20px rgba(0,0,0,0.3)";
+            }
+        }
+
+        function updateEnvironment(t, l) {
+            document.getElementById('targetTemp').innerText = typeof t === 'number' ? t.toFixed(1) + " °C" : t;
+            document.getElementById('targetLux').innerText = typeof l === 'number' ? l.toFixed(0) + " Lux" : l;
+        }
+
+        function log(msg, type="") {
+            const logger = document.getElementById('logger');
+            const div = document.createElement('div');
+            div.className = "log-entry " + (type === "err" ? "log-err" : type === "warn" ? "log-warn" : "");
+            div.innerText = msg;
+            logger.prepend(div);
+            if (logger.children.length > 20) logger.lastChild.remove();
+        }
+    </script>
+</body>
+</html>
