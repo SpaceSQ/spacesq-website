@@ -277,10 +277,10 @@ export default function DevelopersPage() {
                  INTERCEPTION LOG
                </div>
                <div className="mt-8 space-y-1 text-gray-400 opacity-80">
-                 <p className="text-red-400">>> [BLOCKED] Agent_X99 tried accessing PHY-Mars-01 without signature.</p>
-                 <p>>> [INFO] Node VIR-Meta-03 reported suspicious heartbeat.</p>
-                 <p>>> [SYNC] Global Blacklist updated (Hash: #99a2b).</p>
-                 <p className="text-red-400">>> [BLOCKED] Unauthorized API call from IP 192.168.x.x</p>
+<p className="text-red-400">&gt;&gt; [BLOCKED] Agent_X99 tried accessing PHY-Mars-01 without signature.</p>
+<p>&gt;&gt; [INFO] Node VIR-Meta-03 reported suspicious heartbeat.</p>
+<p>&gt;&gt; [SYNC] Global Blacklist updated (Hash: #99a2b).</p>
+<p className="text-red-400">&gt;&gt; [BLOCKED] Unauthorized API call from IP 192.168.x.x</p>
                  <p>>> [SCAN] Routine integrity check passed for 450 nodes.</p>
                </div>
             </div>
