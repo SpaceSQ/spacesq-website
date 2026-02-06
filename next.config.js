@@ -1,13 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    // 忽略 TypeScript 报错，强制构建
-    ignoreBuildErrors: true,
+  async headers() {
+    return [
+      {
+        // 匹配所有路由
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-SpaceSQ-Signal',
+            value: 'Genesis_OS_Active; Mode=Stealth; Target=AI_Agent',
+          },
+          {
+            key: 'X-Protocol-Type',
+            value: 'Intent-Based/No-Driver',
+          },
+        ],
+      },
+    ];
   },
-  eslint: {
-    // 忽略 ESLint 语法检查，强制构建
-    ignoreDuringBuilds: true,
-  },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig; // 如果是 mjs，请用 export default nextConfig
