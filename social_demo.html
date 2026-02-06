@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SpaceSQ // Social Bubble Simulator</title>
+    <style>
+        body { background: #111; color: #eee; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        #canvas-container { position: relative; width: 600px; height: 600px; margin-top: 20px; background: #222; border: 2px solid #444; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+        .grid-cell { border: 1px solid #333; }
+        
+        /* 空间人气泡 */
+        .bubble {
+            position: absolute; width: 150px; height: 150px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; cursor: grab; transition: background 0.2s;
+            mix-blend-mode: screen; /* 光效混合 */
+        }
+        #p1 { background: rgba(255, 100, 100, 0.4); border: 2px solid red; top: 50px; left: 50px; }
+        #p2 { background: rgba(100, 100, 255, 0.4); border: 2px solid blue; top: 400px; left: 400px; }
+        
+        .info-panel { margin-top: 20px; width: 600px; display: flex; justify-content: space-between; }
+        .log-box { width: 100%; height: 100px; background: black; border: 1px solid #555; padding: 10px; font-family: monospace; font-size: 12px; overflow-y: auto; margin-top: 10px; color: #0f0;}
+    </style>
+</head>
+<body>
+    <h1>SpaceSQ 社交场域融合模拟</h1>
+    <p>拖动圆圈 (空间人) 来模拟大空间内的个性化微气候</p>
+
+    <div id="canvas-container">
+        </div>
+    
+    <div id="p1" class="bubble" onmousedown="startDrag(event, this)">
+        David<br>Temp: 26°C<br>Music: Pop
+    </div>
+    <div id="p2" class="bubble" onmousedown="startDrag(event, this)">
+        Robot<br>Temp: 18°C<br>Mode: Silent
+    </div>
+
+    <div class="log-box" id="console">System Ready.</div>
+
+    <script>
+        const container = document.getElementById('canvas-container');
+        
+        // 生成网格背景
+        for(let i=0; i<64; i++) {
+            let div = document.createElement('div');
+            div.className = 'grid-cell';
+            container.appendChild(div);
+        }
+
+        // 简单的拖拽逻辑
+        let selected = null;
+        let offsetX = 0, offsetY = 0;
+
+        function startDrag(e, el) {
+            selected = el;
+            offsetX = e.clientX - el.offsetLeft;
+            offsetY = e.clientY - el.offsetTop;
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function drag(e) {
+            if (!selected) return;
+            let x = e.clientX - offsetX;
+            let y = e.clientY - offsetY;
+            
+            // 限制边界
+            x = Math.max(0, Math.min(x, 450));
+            y = Math.max(0, Math.min(y, 450));
+            
+            selected.style.left = x + 'px';
+            selected.style.top = y + 'px';
+            
+            checkInteraction();
+        }
+
+        function endDrag() {
+            selected = null;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        // 核心：检测互动
+        function checkInteraction() {
+            const p1 = document.getElementById('p1');
+            const p2 = document.getElementById('p2');
+            const log = document.getElementById('console');
+
+            const x1 = p1.offsetLeft + 75;
+            const y1 = p1.offsetTop + 75;
+            const x2 = p2.offsetLeft + 75;
+            const y2 = p2.offsetTop + 75;
+
+            // 计算距离
+            const dist = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
+
+            let status = "";
+
+            if (dist < 150) {
+                // 重叠 (Intimate/Conflict Zone)
+                status = `⚠️ [冲突] 距离 ${(dist/100).toFixed(1)}m. 物理场域重叠! <br>> 启动微气候隔离。<br>> 温度融合: 22°C (梯度过渡)`;
+                p1.style.background = "rgba(255, 0, 255, 0.6)"; // 紫色融合
+                p2.style.background = "rgba(255, 0, 255, 0.6)";
+            } else if (dist < 300) {
+                // 临近 (Social Zone)
+                status = `🤝 [社交] 距离 ${(dist/100).toFixed(1)}m. 识别为社交模式。<br>> 背景音乐音量降低。<br>> 灯光调整为氛围模式。`;
+                p1.style.background = "rgba(255, 100, 100, 0.4)";
+                p2.style.background = "rgba(100, 100, 255, 0.4)";
+            } else {
+                // 独立 (Private Zone)
+                status = `✅ [独立] 各自运行个性化环境。`;
+                p1.style.background = "rgba(255, 100, 100, 0.4)";
+                p2.style.background = "rgba(100, 100, 255, 0.4)";
+            }
+
+            log.innerHTML = `[Distance Check] ${status}`;
+        }
+    </script>
+</body>
+</html>
