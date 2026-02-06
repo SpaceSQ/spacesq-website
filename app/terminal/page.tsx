@@ -25,14 +25,14 @@ const SystemLog = () => {
     <div className="font-mono text-[10px] text-green-500/80 h-32 overflow-hidden relative">
       <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
       <div className="space-y-1 opacity-80">
-        <p>> [SYSTEM] SSSU-Kernel v1.4 loaded.</p>
-        <p>> [LINK] Uplink to Earth_Main established (Ping: 450ms).</p>
-        <p>> [SENSOR] O2 levels nominal.</p>
-        <p>> [CHECK] Airlock pressure sealed.</p>
-        <p>> [WARNING] External temperature dropping.</p>
-        <p>> [AUTH] User ID: E-CN-2602 verified.</p>
-        <p>> [SYNC] NBT block #99201 committed.</p>
-        <p>> [SYSTEM] Standby mode active.</p>
+        <p>&gt; [SYSTEM] SSSU-Kernel v1.4 loaded.</p>
+        <p>&gt; [LINK] Uplink to Earth_Main established (Ping: 450ms).</p>
+        <p>&gt; [SENSOR] O2 levels nominal.</p>
+        <p>&gt; [CHECK] Airlock pressure sealed.</p>
+        <p>&gt; [WARNING] External temperature dropping.</p>
+        <p>&gt; [AUTH] User ID: E-CN-2602 verified.</p>
+        <p>&gt; [SYNC] NBT block #99201 committed.</p>
+        <p>&gt; [SYSTEM] Standby mode active.</p>
       </div>
     </div>
   );
