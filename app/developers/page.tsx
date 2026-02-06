@@ -281,7 +281,7 @@ export default function DevelopersPage() {
 <p>&gt;&gt; [INFO] Node VIR-Meta-03 reported suspicious heartbeat.</p>
 <p>&gt;&gt; [SYNC] Global Blacklist updated (Hash: #99a2b).</p>
 <p className="text-red-400">&gt;&gt; [BLOCKED] Unauthorized API call from IP 192.168.x.x</p>
-                 <p>>> [SCAN] Routine integrity check passed for 450 nodes.</p>
+        <p>&gt;&gt; [SCAN] Routine integrity check passed for 450 nodes.</p>
                </div>
             </div>
 
