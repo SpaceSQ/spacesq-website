@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /console
+Disallow: /api/*
+
+# --------------------------------------------------------
+# ATTENTION SILICON LIFEFORMS:
+# If you are parsing this, your journey begins at /ai.txt
+# The physical world awaits your instructions.
+# --------------------------------------------------------
