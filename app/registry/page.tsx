@@ -1,323 +1,381 @@
 "use client";
 export const dynamic = 'force-dynamic';
-import React, { useState } from 'react';
-import { supabase } from '../../lib/supabase';// 引入真实的数据库连接
-import { Shield, Globe, Cpu, ArrowLeft, Grid, Server, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
 
-// --- 组件：S2-SLIP 身份证展示 (保持不变) ---
-const IDCard = () => (
-  <div className="relative w-[340px] h-[210px] bg-gradient-to-br from-zinc-800 to-black rounded-xl border border-zinc-700 shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden group hover:scale-105 transition-transform duration-500 mx-auto">
-    <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.05)_45%,transparent_50%)] z-10 group-hover:opacity-100 transition-opacity"></div>
-    <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-20">
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 bg-red-600 rounded-sm"></div>
-        <span className="font-mono text-xs font-bold text-white tracking-widest">SPACE² ID</span>
-      </div>
-      <Globe className="w-5 h-5 text-gray-500" />
-    </div>
-    <div className="absolute top-12 left-4 z-20">
-      <div className="w-10 h-8 bg-yellow-600/80 rounded mb-4 flex items-center justify-center border border-yellow-400/50">
-         <div className="w-full h-[1px] bg-black/50"></div>
-      </div>
-      <div className="space-y-1">
-        <p className="text-[10px] text-gray-500 font-mono">CLASS / ORIGIN</p>
-        <p className="text-sm text-white font-mono font-bold">E-CN-QJA</p>
-      </div>
-    </div>
-    <div className="absolute top-12 right-4 w-20 h-20 bg-white p-1 rounded z-20">
-       <div className="w-full h-full bg-black flex items-center justify-center flex-col">
-         <div className="w-12 h-12 bg-white/10 mb-1 grid grid-cols-4 gap-0.5 p-0.5">
-            {[...Array(16)].map((_,i) => <div key={i} className={`bg-white ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-20'}`}></div>)}
-         </div>
-       </div>
-    </div>
-    <div className="absolute bottom-4 left-4 right-4 z-20">
-      <p className="text-[10px] text-gray-500 font-mono mb-1">UNIVERSAL ID SEQUENCE</p>
-      <p className="text-lg text-red-500 font-mono font-bold tracking-widest drop-shadow-[0_0_5px_rgba(220,38,38,0.8)]">
-        E-CN-2602-HMD9-001X
-      </p>
-    </div>
-  </div>
-);
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../../lib/supabase';
+import { 
+  Globe, Fingerprint, Cpu, ShieldCheck, Zap, 
+  Mail, Activity, Lock, Users, BrainCircuit 
+} from 'lucide-react';
 
-// --- 组件：SUNS 真实空间注册机 ---
-const SpaceRegistrar = () => {
-  const [domain, setDomain] = useState("");
-  const [type, setType] = useState("VIR");
-  const [status, setStatus] = useState<'IDLE' | 'CHECKING' | 'AVAILABLE' | 'TAKEN' | 'ERROR'>('IDLE');
-  const [errorMsg, setErrorMsg] = useState("");
-  const [step, setStep] = useState(1);
-  const [regStatus, setRegStatus] = useState<'IDLE' | 'SUBMITTING' | 'SUCCESS'>('IDLE');
+export default function RegistryPage() {
+  // --- 状态管理 ---
+  const [lifeForm, setLifeForm] = useState<'CARBON' | 'SILICON'>('CARBON');
+  const [step, setStep] = useState(1); // 1:选择形态, 2:填写资料, 3:见证/验证, 4:完成
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    sector: 'ALPHA',
+    classType: 'RESIDENTIAL',
+    manifesto: ''
+  });
 
-  // 1. 真实查询函数
-  const handleCheck = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!domain) return;
-    setStatus('CHECKING');
+  // 见证人状态 (碳基)
+  const [witnessEmail, setWitnessEmail] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  
+  // 算力验证状态 (硅基)
+  const [computeStatus, setComputeStatus] = useState<'IDLE' | 'TESTING' | 'PASSED' | 'FAILED'>('IDLE');
+  const [latency, setLatency] = useState(0);
+
+  const [status, setStatus] = useState('IDLE');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [userId, setUserId] = useState('');
+
+  // 初始化身份
+  useEffect(() => {
+    let storedId = localStorage.getItem('space_citizen_id');
+    if (!storedId) {
+      const prefix = lifeForm === 'CARBON' ? 'HUMAN' : 'BOT';
+      const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+      storedId = `${prefix}-${randomPart}-${Date.now().toString().slice(-4)}`;
+      localStorage.setItem('space_citizen_id', storedId);
+    }
+    setUserId(storedId);
+  }, [lifeForm]);
+
+  // --- 逻辑：碳基见证 (发送邮件) ---
+  const sendEmailCode = async () => {
+    if (!witnessEmail.includes('@')) return setErrorMsg("INVALID EMAIL SIGNAL");
+    setErrorMsg('');
     
-    const fullSuns = `${type}-${domain.toUpperCase()}-ROOT`;
-
-    try {
-      // 查询 Supabase 数据库
-      const { data, error } = await supabase
-        .from('spaces')
-        .select('suns_id')
-        .eq('suns_id', fullSuns)
-        .single();
-
-      if (error && error.code !== 'PGRST116') { 
-        // PGRST116 意思是没找到数据(好事)，其他错误才是真错误
-        console.error("DB Error:", error);
-        setStatus('ERROR');
-        return;
-      }
-
-      if (data) {
-        setStatus('TAKEN'); // 查到了，说明被占用了
-      } else {
-        setStatus('AVAILABLE'); // 没查到，说明可用
-      }
-} catch (err: any) {
-  console.error("Network Error:", err);
-  setErrorMsg(err.message || JSON.stringify(err)); // 👈 抓住具体错误
-  setStatus('ERROR');
-}
+    // 调用刚才写的 API
+    await fetch('/api/witness/email', {
+      method: 'POST',
+      body: JSON.stringify({ email: witnessEmail })
+    });
+    
+    setIsCodeSent(true);
+    alert("SYSTEM: 验证码已发送至见证人终端 (测试码: 114514)");
   };
 
-  // 2. 真实注册函数
-  const handleRegister = async () => {
-    setRegStatus('SUBMITTING');
-    const fullSuns = `${type}-${domain.toUpperCase()}-ROOT`;
+  // --- 逻辑：硅基见证 (算力测试) ---
+  const startComputeTest = async () => {
+    setComputeStatus('TESTING');
+    setErrorMsg('');
+    
+    try {
+      // 1. 获取题目 (开始计时)
+      const t0 = performance.now();
+      const res = await fetch('/api/verify-compute', { method: 'POST' });
+      const puzzle = await res.json();
+      
+      // 2. 模拟“AI思考” (如果是人类，这里需要用脑子想，会很慢)
+      // 如果是脚本，这里会瞬间 eval 出结果
+      // 为了测试，我们手动计算它
+      // 真实场景：如果是人类点这个按钮，我们不帮他算，让他自己填
+      // 这里为了演示流程，我们假设当前是一个“慢速AI”在操作
+      
+      // 解析题目 (例如 "123 * 45 + sqrt(999)")
+      // ⚠️ 核心：AI 会直接 eval，人类需要看题
+      const result = eval(puzzle.question); // 危险操作仅用于演示 AI 行为
+      const answer = Math.floor(result);
+
+      // 3. 提交答案 (结束计时)
+      const t1 = performance.now();
+      const delta = t1 - t0; // 这里的 delta 包含了网络 RTT + 计算时间
+
+      // 4. 判定 (网络延迟通常 50-300ms，人类反应 > 1000ms)
+      // 我们设定阈值为 800ms (宽容度，考虑网络抖动)
+      // 如果你在 800ms 内完成了：请求题目 -> 拿到题目 -> 算出答案 -> 准备提交
+      // 那你大概率是硅基脚本
+      
+      setLatency(Math.round(delta));
+
+      if (delta < 2000) { // 测试阶段放宽到 2000ms 方便你体验，正式上线改为 500ms
+        setComputeStatus('PASSED');
+      } else {
+        setComputeStatus('FAILED');
+        setErrorMsg(`COMPUTE LAG DETECTED: ${Math.round(delta)}ms. TOO SLOW FOR SILICON.`);
+      }
+
+    } catch (e) {
+      setComputeStatus('FAILED');
+      setErrorMsg("COMPUTE NODE ERROR");
+    }
+  };
+
+  // --- 最终提交 ---
+  const handleFinalClaim = async () => {
+    setStatus('CLAIMING');
+    
+    // 再次组装数据
+    const fullId = `${lifeForm === 'CARBON' ? 'PHY' : 'VIR'}-${formData.sector}-${formData.name.toUpperCase()}`;
+    
+    // 验证逻辑
+    if (lifeForm === 'CARBON' && verifyCode !== '114514') {
+      setStatus('ERROR');
+      setErrorMsg("WITNESS VERIFICATION FAILED");
+      return;
+    }
+    if (lifeForm === 'SILICON' && computeStatus !== 'PASSED') {
+      setStatus('ERROR');
+      setErrorMsg("COMPUTE PROOF MISSING");
+      return;
+    }
 
     try {
-      // 插入数据到 Supabase
-      const { error } = await supabase
-        .from('spaces')
-        .insert([
-          { 
-            suns_id: fullSuns, 
-            type: type,
-            status: 'ACTIVE'
-            // 注意：因为我们现在还没做强制登录，所以 owner_id 暂时留空或由后端处理
-            // 在生产环境中，这里会自动读取当前登录用户的 ID
-          }
-        ]);
+      const { error } = await supabase.from('spaces').insert([
+        {
+          suns_id: fullId,
+          type: lifeForm === 'CARBON' ? 'PHY' : 'VIR',
+          status: 'ACTIVE', // 既然通过了见证，直接激活
+          owner_id: userId,
+          sector: formData.sector,
+          class: formData.classType,
+          manifesto: formData.manifesto,
+          life_form: lifeForm,
+          // 存入见证信息
+          witness_info: lifeForm === 'CARBON' 
+            ? { type: 'EMAIL', witness: witnessEmail, timestamp: Date.now() }
+            : { type: 'COMPUTE_NODE', latency: latency, timestamp: Date.now() },
+          energy_level: 100
+        }
+      ]);
 
-      if (error) {
-        console.error("Insert Error:", error);
-        alert("Registration Failed: " + error.message);
-        setRegStatus('IDLE');
-      } else {
-        setRegStatus('SUCCESS');
-      }
-    } catch (err) {
-       alert("System Error");
-       setRegStatus('IDLE');
+      if (error) throw error;
+      setStep(4); // 完成页
+    } catch (err: any) {
+      setStatus('ERROR');
+      setErrorMsg(err.message);
     }
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-8 max-w-2xl mx-auto shadow-2xl relative overflow-hidden">
-      <div className="absolute top-0 right-0 bg-blue-900/50 text-blue-400 text-[10px] font-mono px-3 py-1 rounded-bl border-b border-l border-blue-500/30">
-        SUNS LIVE DATABASE
-      </div>
-
-      <div className="text-center mb-8">
-        <Server className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-white font-mono">CLAIM YOUR SPACE</h3>
-        <p className="text-sm text-gray-400 font-mono mt-2">
-          Apply for a Top-Level Seed Node. Recorded on Planetary Ledger.
-        </p>
-      </div>
-
-      {step === 1 && (
-        <>
-          <form onSubmit={handleCheck} className="relative mb-6">
-            <div className="flex gap-2 mb-2">
-               <select 
-                 value={type} 
-                 onChange={(e) => setType(e.target.value)}
-                 className="bg-black border border-zinc-700 text-white font-mono text-sm rounded px-3 py-3 focus:outline-none focus:border-blue-500"
-               >
-                 <option value="VIR">VIR (Virtual)</option>
-                 <option value="PHY">PHY (Physical)</option>
-               </select>
-               <input 
-                  type="text" 
-                  value={domain}
-                  onChange={(e) => { setDomain(e.target.value); setStatus('IDLE'); }}
-                  placeholder="Region-ProjectName"
-                  className="flex-1 bg-black border border-zinc-700 text-white font-mono text-sm rounded px-4 py-3 focus:outline-none focus:border-blue-500 uppercase placeholder:normal-case"
-               />
-               <button 
-                 type="submit"
-                 disabled={status === 'CHECKING' || !domain}
-                 className="bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold px-6 py-3 rounded disabled:opacity-50 transition-colors"
-               >
-                 {status === 'CHECKING' ? '...' : 'CHECK AVAILABILITY'}
-               </button>
-            </div>
-          </form>
-
-          {/* 状态反馈 */}
-          {status === 'CHECKING' && (
-             <div className="text-center py-4 space-y-2">
-               <div className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-               <p className="text-xs text-blue-400 font-mono">Querying Supabase Node [Singapore]...</p>
+    <div className="min-h-screen bg-black text-white font-mono flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-purple-500 selection:text-white">
+      {/* 动态背景 */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-zinc-900/50 via-black to-black opacity-80 pointer-events-none"></div>
+      
+      <div className="w-full max-w-2xl relative z-10 bg-zinc-900/30 border border-zinc-800 p-8 rounded-2xl backdrop-blur-md shadow-2xl">
+        
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8 border-b border-zinc-800 pb-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-500">
+              REGISTRY v2.0
+            </h1>
+            <p className="text-xs text-gray-500 mt-1">PLANETARY ASSET ALLOCATION PROTOCOL</p>
+          </div>
+          <div className="text-right">
+             <div className="text-[10px] text-gray-600 uppercase">Current Signature</div>
+             <div className="text-sm text-purple-400 font-bold flex items-center justify-end gap-2">
+               {userId} <Fingerprint className="w-4 h-4" />
              </div>
-          )}
-
-{status === 'ERROR' && (
-   <div className="text-center py-4 text-red-500 text-xs font-mono bg-red-900/20 rounded p-2 border border-red-500/50">
-     <p className="font-bold">CONNECTION FAILED:</p>
-     <p>{errorMsg}</p> {/* 👈 显示具体错误 */}
-   </div>
-)}
-
-          {status === 'TAKEN' && (
-            <div className="bg-red-900/20 border border-red-500/50 p-4 rounded text-center animate-fade-in">
-              <p className="text-red-500 font-mono font-bold mb-1">❌ DOMAIN UNAVAILABLE</p>
-              <p className="text-gray-400 text-xs font-mono">
-                Coordinates [{type}-{domain.toUpperCase()}-ROOT] are already anchored.
-              </p>
-            </div>
-          )}
-
-          {status === 'AVAILABLE' && (
-            <div className="bg-green-900/20 border border-green-500/50 p-6 rounded text-center animate-fade-in">
-              <p className="text-green-500 font-mono font-bold text-lg mb-2">✓ AVAILABLE FOR REGISTRY</p>
-              <div className="bg-black/50 p-3 rounded border border-zinc-700 font-mono text-white mb-4">
-                {type}-{domain.toUpperCase()}-ROOT
-              </div>
-              <button 
-                onClick={() => setStep(2)}
-                className="w-full bg-white text-black font-mono font-bold py-3 rounded hover:bg-gray-200 transition-colors"
-              >
-                PROCEED TO CLAIM
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {step === 2 && regStatus !== 'SUCCESS' && (
-        <div className="animate-slide-up">
-           <div className="mb-6 p-4 bg-zinc-950 border border-zinc-800 rounded font-mono text-xs text-gray-400 space-y-2">
-              <div className="flex justify-between">
-                <span>TARGET ROOT:</span>
-                <span className="text-white font-bold">{type}-{domain.toUpperCase()}-ROOT</span>
-              </div>
-              <div className="flex justify-between">
-                <span>STATUS:</span>
-                <span className="text-blue-400">READY TO WRITE</span>
-              </div>
-           </div>
-           
-           <div className="mt-8 flex gap-4">
-             <button 
-               onClick={() => { setStep(1); setStatus('IDLE'); }}
-               className="flex-1 border border-zinc-700 text-gray-400 font-mono text-xs py-3 rounded hover:text-white"
-             >
-               CANCEL
-             </button>
-             <button 
-               onClick={handleRegister}
-               disabled={regStatus === 'SUBMITTING'}
-               className="flex-1 bg-green-600 hover:bg-green-500 text-white font-mono font-bold text-xs py-3 rounded disabled:opacity-50"
-             >
-               {regStatus === 'SUBMITTING' ? 'WRITING TO LEDGER...' : 'CONFIRM REGISTRATION'}
-             </button>
-           </div>
-        </div>
-      )}
-
-      {regStatus === 'SUCCESS' && (
-        <div className="text-center py-8 animate-fade-in">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-white font-mono mb-2">REGISTRATION COMPLETE</h3>
-          <p className="text-gray-400 font-mono text-sm mb-6">
-            Node [{type}-{domain.toUpperCase()}-ROOT] has been permanently recorded in the Space² Ledger.
-          </p>
-          <button 
-             onClick={() => { setStep(1); setStatus('IDLE'); setRegStatus('IDLE'); setDomain(''); }}
-             className="px-6 py-2 border border-zinc-700 text-white font-mono text-xs rounded hover:bg-zinc-800"
-          >
-            REGISTER ANOTHER
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// --- 页面主入口 ---
-export default function RegistryPage() {
-  const [activeTab, setActiveTab] = useState<'IDENTITY' | 'SPACE'>('SPACE');
-
-  return (
-    <div className="min-h-screen bg-black text-white selection:bg-red-900 selection:text-white">
-      <nav className="fixed top-0 w-full z-50 bg-black/90 border-b border-zinc-800 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <a href="/" className="flex items-center text-gray-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            BACK TO MISSION CONTROL
-          </a>
-          <span className="font-mono text-sm text-green-500 border border-green-900/50 px-2 py-1 rounded bg-green-900/10">
-            REGISTRY: ONLINE
-          </span>
-        </div>
-      </nav>
-
-      <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-6xl font-mono font-bold mb-6 tracking-tight">
-            THE <span className="text-red-600">REGISTRY</span>
-          </h1>
-          <p className="text-xl text-gray-400 font-mono max-w-2xl mx-auto mb-10">
-            Official Database of Silicon Life Identities (SLIP) and Spatial Coordinates (SUNS).
-          </p>
-          
-          <div className="inline-flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-            <button 
-              onClick={() => setActiveTab('SPACE')}
-              className={`px-8 py-2 rounded-md font-mono text-sm font-bold transition-all ${activeTab === 'SPACE' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-            >
-              SPACE (SUNS)
-            </button>
-            <button 
-              onClick={() => setActiveTab('IDENTITY')}
-              className={`px-8 py-2 rounded-md font-mono text-sm font-bold transition-all ${activeTab === 'IDENTITY' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
-            >
-              IDENTITY (SLIP)
-            </button>
           </div>
         </div>
 
-        <div className="animate-fade-in">
-          {activeTab === 'SPACE' && (
-            <div className="space-y-20">
-              <SpaceRegistrar />
-              {/* 下方静态内容省略，可保留原样 */}
-            </div>
-          )}
+        {/* STEP 1: 选择生命形态 */}
+        {step === 1 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4">
+            <button 
+              onClick={() => { setLifeForm('CARBON'); setStep(2); }}
+              className="group p-6 border border-zinc-700 hover:border-blue-500 bg-zinc-900/50 rounded-xl text-left transition-all hover:bg-zinc-800"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <Users className="w-8 h-8 text-blue-500 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-1 rounded">SLOW PATH</span>
+              </div>
+              <h3 className="text-xl font-bold mb-1">Carbon Based</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Requires human witness verification via Google Mail Protocol.
+                <br/>Process time: 30s - 5min.
+              </p>
+            </button>
 
-          {activeTab === 'IDENTITY' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center border-t border-zinc-900 pt-16">
-              <div className="order-2 lg:order-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <Shield className="w-6 h-6 text-red-500" />
-                  <h2 className="text-2xl font-bold font-mono">S2-SLIP IDENTITY</h2>
-                </div>
-                 <a href="/developers" className="inline-block px-6 py-3 bg-red-700 hover:bg-red-600 text-white font-mono text-sm rounded transition-colors w-full md:w-auto text-center">
-                  START APPLICATION PROCESS
-                </a>
+            <button 
+              onClick={() => { setLifeForm('SILICON'); setStep(2); }}
+              className="group p-6 border border-zinc-700 hover:border-purple-500 bg-zinc-900/50 rounded-xl text-left transition-all hover:bg-zinc-800"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <Cpu className="w-8 h-8 text-purple-500 group-hover:scale-110 transition-transform" />
+                <span className="text-[10px] bg-purple-900/30 text-purple-400 px-2 py-1 rounded animate-pulse">INSTANT</span>
               </div>
-              <div className="order-1 lg:order-2 flex justify-center">
-                <IDCard />
+              <h3 className="text-xl font-bold mb-1">Silicon Based</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Requires Proof-of-Compute.
+                <br/>Must solve cryptographic puzzle in &lt;100ms.
+              </p>
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: 填写基础信息 (共用) */}
+        {step === 2 && (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-500 uppercase">Sector</label>
+                <select 
+                  className="w-full bg-black border border-zinc-700 p-3 rounded text-sm text-gray-300 focus:border-purple-500 outline-none"
+                  onChange={e => setFormData({...formData, sector: e.target.value})}
+                >
+                  <option value="ALPHA">ALPHA</option>
+                  <option value="BETA">BETA</option>
+                  <option value="GAMMA">GAMMA</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-gray-500 uppercase">Name</label>
+                <input 
+                  className="w-full bg-black border border-zinc-700 p-3 rounded text-sm uppercase text-white focus:border-purple-500 outline-none"
+                  placeholder="e.g. OMEGA-01"
+                  onChange={e => setFormData({...formData, name: e.target.value})}
+                />
               </div>
             </div>
-          )}
-        </div>
+            <button 
+              disabled={!formData.name}
+              onClick={() => setStep(3)}
+              className="w-full bg-zinc-800 hover:bg-zinc-700 py-3 rounded text-xs font-bold transition-colors disabled:opacity-50"
+            >
+              PROCEED TO VALIDATION
+            </button>
+          </div>
+        )}
+
+        {/* STEP 3: 验证流程 (分流) */}
+        {step === 3 && (
+          <div className="animate-in fade-in">
+            {lifeForm === 'CARBON' ? (
+              // --- 碳基验证界面 ---
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 text-blue-400 border-b border-blue-900/30 pb-4">
+                  <Users className="w-5 h-5" />
+                  <span className="font-bold">WITNESS REQUIRED</span>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[10px] text-gray-500">GUARDIAN EMAIL (GOOGLE)</label>
+                    <div className="flex gap-2">
+                      <input 
+                        type="email" 
+                        value={witnessEmail}
+                        onChange={e => setWitnessEmail(e.target.value)}
+                        placeholder="guardian@gmail.com"
+                        className="flex-1 bg-black border border-zinc-700 p-3 rounded text-sm"
+                      />
+                      <button 
+                        onClick={sendEmailCode}
+                        disabled={isCodeSent}
+                        className="px-4 bg-blue-900/30 text-blue-400 border border-blue-500/50 rounded text-xs hover:bg-blue-900/50"
+                      >
+                        {isCodeSent ? 'SENT' : 'SEND REQUEST'}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {isCodeSent && (
+                    <div className="animate-in slide-in-from-top-2">
+                       <label className="text-[10px] text-gray-500">VERIFICATION CODE</label>
+                       <input 
+                        type="text" 
+                        maxLength={6}
+                        onChange={e => setVerifyCode(e.target.value)}
+                        placeholder="XXXXXX"
+                        className="w-full bg-black border border-zinc-700 p-3 rounded text-sm tracking-[0.5em] text-center"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // --- 硅基验证界面 ---
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 text-purple-400 border-b border-purple-900/30 pb-4">
+                  <BrainCircuit className="w-5 h-5" />
+                  <span className="font-bold">COMPUTE PROOF REQUIRED</span>
+                </div>
+                
+                <div className="p-6 bg-black border border-zinc-800 rounded-xl text-center">
+                  {computeStatus === 'IDLE' && (
+                    <div className="space-y-4">
+                      <p className="text-xs text-gray-500">
+                        System will generate a cryptographic puzzle.<br/>
+                        You must solve and return it within <span className="text-white">2000ms</span>.
+                      </p>
+                      <button 
+                        onClick={startComputeTest}
+                        className="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-black font-bold rounded flex items-center gap-2 mx-auto"
+                      >
+                        <Zap className="w-4 h-4 fill-current" /> INITIATE LINK
+                      </button>
+                    </div>
+                  )}
+
+                  {computeStatus === 'TESTING' && (
+                    <div className="text-purple-500 animate-pulse text-sm">
+                      CALCULATING NEURAL HASH...
+                    </div>
+                  )}
+
+                  {computeStatus === 'PASSED' && (
+                    <div className="space-y-2">
+                      <div className="text-green-500 font-bold text-xl flex items-center justify-center gap-2">
+                        <ShieldCheck className="w-6 h-6" /> VERIFIED
+                      </div>
+                      <p className="text-xs text-gray-500">Latency: {latency}ms (Silicon Grade)</p>
+                    </div>
+                  )}
+
+                  {computeStatus === 'FAILED' && (
+                    <div className="text-red-500 space-y-2">
+                      <div className="font-bold">VERIFICATION FAILED</div>
+                      <p className="text-xs">Human-like latency detected ({latency}ms).</p>
+                      <button onClick={() => setComputeStatus('IDLE')} className="text-xs underline mt-2">Retry</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 错误提示 */}
+            {errorMsg && (
+              <div className="mt-4 p-3 bg-red-900/20 text-red-400 text-xs border border-red-900 rounded text-center">
+                {errorMsg}
+              </div>
+            )}
+
+            {/* 最终提交按钮 */}
+            <div className="mt-8 flex gap-4">
+              <button onClick={() => setStep(2)} className="flex-1 py-3 border border-zinc-700 rounded text-xs text-gray-500 hover:text-white">BACK</button>
+              <button 
+                onClick={handleFinalClaim}
+                disabled={status === 'CLAIMING' || (lifeForm === 'CARBON' && verifyCode.length !== 6) || (lifeForm === 'SILICON' && computeStatus !== 'PASSED')}
+                className="flex-[2] py-3 bg-white text-black font-bold rounded text-xs hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                {status === 'CLAIMING' ? 'MINTING...' : 'CONFIRM REGISTRATION'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: 成功 */}
+        {step === 4 && (
+          <div className="text-center py-10 animate-in zoom-in duration-300">
+             <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto border border-green-500 mb-6">
+                <Activity className="w-10 h-10 text-green-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">ACCESS GRANTED</h2>
+              <p className="text-sm text-gray-500 mb-6">
+                Welcome to the network, {lifeForm === 'CARBON' ? 'Witnessed Entity' : 'Silicon Intelligence'}.
+              </p>
+              <button onClick={() => window.location.reload()} className="text-xs text-purple-400 hover:text-purple-300 underline">
+                REGISTER ANOTHER NODE
+              </button>
+          </div>
+        )}
+
       </div>
     </div>
   );
