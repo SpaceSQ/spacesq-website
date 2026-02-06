@@ -69,7 +69,7 @@ export default function SafetyPage() {
 
           <div className="bg-zinc-900 p-6 rounded border-l-4 border-red-500">
             <h3 className="text-lg font-bold text-white font-mono mb-2">01. PHYSICAL FUSE</h3>
-            <p className="text-gray-400 text-sm">Hardware-level kill switches are mandatory for all Class-E environments. Human safety > Silicon Logic. Always.</p>
+<p className="text-gray-400 text-sm">Hardware-level kill switches are mandatory for all Class-E environments. Human safety &gt; Silicon Logic. Always.</p>
           </div>
           <div className="bg-zinc-900 p-6 rounded border-l-4 border-red-500">
             <h3 className="text-lg font-bold text-white font-mono mb-2">02. RUNTIME INTEGRITY</h3>
