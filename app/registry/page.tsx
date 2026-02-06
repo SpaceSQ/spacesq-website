@@ -61,51 +61,48 @@ export default function RegistryPage() {
   };
 
   // --- 逻辑：硅基见证 (算力测试) ---
-  const startComputeTest = async () => {
+ const startComputeTest = async () => {
     setComputeStatus('TESTING');
     setErrorMsg('');
+    setLatency(0); // 重置延迟
     
     try {
-      // 1. 获取题目 (开始计时)
       const t0 = performance.now();
+      
+      // 1. 请求题目
       const res = await fetch('/api/verify-compute', { method: 'POST' });
+      
+      // 🕵️‍♂️ 检查网络状态
+      if (!res.ok) {
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+      
       const puzzle = await res.json();
       
-      // 2. 模拟“AI思考” (如果是人类，这里需要用脑子想，会很慢)
-      // 如果是脚本，这里会瞬间 eval 出结果
-      // 为了测试，我们手动计算它
-      // 真实场景：如果是人类点这个按钮，我们不帮他算，让他自己填
-      // 这里为了演示流程，我们假设当前是一个“慢速AI”在操作
+      // 2. 计算 (用 new Function 代替 eval，兼容性更好)
+      // 注意：puzzle.question 是类似 "(123 * 45) + sqrt(999)" 的字符串
+      // 我们需要把 sqrt 替换成 Math.sqrt 才能运行
+      const safeExpression = puzzle.question.replace(/sqrt/g, 'Math.sqrt');
+      const result = new Function(`return ${safeExpression}`)();
       
-      // 解析题目 (例如 "123 * 45 + sqrt(999)")
-      // ⚠️ 核心：AI 会直接 eval，人类需要看题
-      const result = eval(puzzle.question); // 危险操作仅用于演示 AI 行为
-      const answer = Math.floor(result);
-
-      // 3. 提交答案 (结束计时)
       const t1 = performance.now();
-      const delta = t1 - t0; // 这里的 delta 包含了网络 RTT + 计算时间
-
-      // 4. 判定 (网络延迟通常 50-300ms，人类反应 > 1000ms)
-      // 我们设定阈值为 800ms (宽容度，考虑网络抖动)
-      // 如果你在 800ms 内完成了：请求题目 -> 拿到题目 -> 算出答案 -> 准备提交
-      // 那你大概率是硅基脚本
+      const delta = t1 - t0;
       
       setLatency(Math.round(delta));
 
-      if (delta < 2000) { // 测试阶段放宽到 2000ms 方便你体验，正式上线改为 500ms
+      if (delta < 2000) {
         setComputeStatus('PASSED');
       } else {
         setComputeStatus('FAILED');
-        setErrorMsg(`COMPUTE LAG DETECTED: ${Math.round(delta)}ms. TOO SLOW FOR SILICON.`);
+        setErrorMsg(`COMPUTE LAG DETECTED: ${Math.round(delta)}ms.`);
       }
 
-    } catch (e) {
+    } catch (e: any) {
       setComputeStatus('FAILED');
-      setErrorMsg("COMPUTE NODE ERROR");
+      // 打印详细错误，方便调试
+      setErrorMsg(`SYSTEM FAIL: ${e.message}`);
     }
   };
-
   // --- 最终提交 ---
   const handleFinalClaim = async () => {
     setStatus('CLAIMING');
