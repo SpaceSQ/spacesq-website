@@ -128,15 +128,18 @@ export default function RegistryPage() {
     try {
       const { error } = await supabase.from('spaces').insert([
         {
-          suns_id: fullId,
+suns_id: fullId,
           type: lifeForm === 'CARBON' ? 'PHY' : 'VIR',
-          status: 'ACTIVE', // 既然通过了见证，直接激活
+          status: 'ACTIVE',
           owner_id: userId,
           sector: formData.sector,
-          class: formData.classType,
+          
+          // 🔴 修改这里！把 class 改为 usage_class
+          // 原来是: class: formData.classType,
+          usage_class: formData.classType,  // ✅ 新字段名
+          
           manifesto: formData.manifesto,
           life_form: lifeForm,
-          // 存入见证信息
           witness_info: lifeForm === 'CARBON' 
             ? { type: 'EMAIL', witness: witnessEmail, timestamp: Date.now() }
             : { type: 'COMPUTE_NODE', latency: latency, timestamp: Date.now() },
