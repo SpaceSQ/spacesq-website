@@ -2,7 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { Terminal, Shield, Cpu, Globe, Download, ChevronRight, Activity, Lock, Mail, X, Github, FileText, ArrowLeft } from 'lucide-react';
+import { GenesisDashboard } from '@/components/GenesisDashboard';
 
+export default function Home() {
+  return (
+    <main>
+       {/* 你的首屏大图/Slogan */}
+       <HeroSection /> 
+       
+       {/* 紧接着放入数据驾驶舱 */}
+       <GenesisDashboard />
+       
+       {/* 其他内容 */}
+    </main>
+  )
+}
 // --- 组件：系统通告 (System Broadcast) ---
 const SystemBroadcast = () => {
   const [visible, setVisible] = useState(true);
